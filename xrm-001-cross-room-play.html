@@ -127,8 +127,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .leg{display:flex; gap:12px; align-items:center; padding:13px; border-radius:11px; color:var(--ink);
   border:1px solid var(--line); background:var(--panel); position:relative; transition:.18s}
 .leg .body{min-width:0; flex:1 1 auto}
-.leg .verb{font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase}
-.leg .ttl{font-size:13.5px; font-weight:560; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.leg .ttl{font-size:13.5px; font-weight:560; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .leg .sub{font-size:11.5px; color:var(--muted); margin-top:1px; font-family:var(--mono)}
 .leg .st{flex:0 0 auto}
 .leg[data-s="locked"]{border-style:dashed; opacity:.6}
@@ -405,6 +404,7 @@ const IC={
 const ROOM={PRE:{name:"Predict",verb:"Call it"},COL:{name:"Collect",verb:"Land it"},PLY:{name:"Play",verb:"Score it"}};
 function ricon(code,solid){return `<span class="ricon ${solid?'solid':''}">${IC[code]}</span>`}
 function rtag(code,solid){return `<span class="rtag ${solid?'solid':''}">${IC[code]}${ROOM[code].name}</span>`}
+function roomtag(code){return `<span class="rtag">${ROOM[code].name}</span>`}
 
 /* ---------- shared play data ---------- */
 const PLAY={
@@ -473,7 +473,7 @@ function legRow(code,state,idx){
   return `<div class="leg" data-s="${st}">
     ${ricon(code,state==="done")}
     <div class="body">
-      <div class="verb">${l.verb} · ${ROOM[code].name}</div>
+      ${roomtag(code)}
       <div class="ttl">${l.title}</div>
       <div class="sub">${l.sub}</div>
     </div>
@@ -518,7 +518,7 @@ const V1={
       const m=mkt(c);
       return `<div class="leg" data-s="ready">
         ${ricon(c,false)}
-        <div class="body"><div class="verb">${ROOM[c].verb} · ${ROOM[c].name}</div>
+        <div class="body">${roomtag(c)}
           <div class="ttl">${m.title}</div>
           <div class="sub">${m.sub}</div></div>
         <div class="legctl">
@@ -576,7 +576,7 @@ const V1={
       const done=s.done[c]; const cur=s.active===c; const m=mkt(c);
       return `<button class="leg" data-s="${cur?'ready':done?'done':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${cur?'var(--surface)':'var(--panel)'}">
         ${ricon(c,done)}
-        <div class="body"><div class="verb">${ROOM[c].verb} · ${ROOM[c].name}</div>
+        <div class="body">${roomtag(c)}
         <div class="ttl">${m.title}</div>
         <div class="sub">${done?'Resolved':cur?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
         <div class="st">${done?tick("done"):IC_arrow()}</div></button>`;
@@ -647,7 +647,7 @@ const V2={
       const st=stt(c);
       return `<div class="leg" data-s="${st==='now'?'ready':st==='done'?'done':'locked'}">
         ${ricon(c,st==="done")}
-        <div class="body"><div class="verb">Step ${i+1} · ${ROOM[c].name}</div>
+        <div class="body">${roomtag(c)}
         <div class="ttl">${PLAY.legs[c].short}</div>
         <div class="sub">${st==="locked"?"Unlocks from step "+i:st==="done"?"Cleared":"Now"}</div></div>
         <div class="st">${st==="done"?tick("done"):st==="locked"?tick("locked"):tick(i+1)}</div>
