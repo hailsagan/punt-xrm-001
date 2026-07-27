@@ -448,11 +448,11 @@ const MARKETS={
 
 /* ---------- variation meta ---------- */
 const META={
-  v1:{code:"V1",name:"The Combo Slip",pattern:"Bundle-first parlay",
+  v1:{code:"V1",name:"The Combo Slip",pattern:"Bundle Parlay up-front",
       note:"All three legs committed up front as one ticket, one stake, one multiplier — then you visit each room to resolve the leg you already own.",
       move:"Movement = resolving your own pre-committed bet, never a new decision to 'go somewhere else'.",
       risk:"Legs can feel simultaneous rather than causal; the room visit must add play, not just confirm."},
-  v2:{code:"V2",name:"The Run",pattern:"Causal chain (gated)",
+  v2:{code:"V2",name:"The Run",pattern:"Roll each win into the next",
       note:"Each room's result fuels the next. The call funds the pack; the pull becomes a table token. Leg 2 stays locked until leg 1 lands.",
       move:"Movement is the only way forward and every move is powered by the last — unmistakably one continuous play.",
       risk:"Gating can read as a forced funnel if a losing leg dead-ends the run; needs a graceful fail path."}
