@@ -758,12 +758,22 @@ function paint(){
   document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
 }
 
+/* Stake +/- only ever changes two numbers on screen — update them in place
+   instead of re-rendering, so nothing else reflows or replays its enter animation. */
+function updateStakeUI(){
+  const s=S.v1;
+  const val=$(".stepper.sm .val"); if(val)val.textContent="$"+s.stake;
+  const big=$(".stakecol .payline .big"); if(big)big.textContent="$"+toWin(s.stake,s.legs);
+  const cta=$('[data-a="place"]'); if(cta)cta.textContent="Place Combo-Play Bet · $"+s.stake;
+}
+
 /* ---------- events ---------- */
 app.addEventListener("click",e=>{
   const t=e.target.closest("[data-a]");if(!t)return;
   const a=t.dataset.a;
   if(a==="restart"){reset(S.v);paint();return;}
   V[S.v].on&&V[S.v].on(a,t.dataset);
+  if(a==="stake"&&S.v==="v1"&&S.v1.stage==="build"){ updateStakeUI(); return; }
   paint();
 });
 
@@ -776,7 +786,13 @@ varlist.innerHTML=ORDER.map(v=>{const m=META[v];
   </button>`;}).join("");
 varlist.addEventListener("click",e=>{const b=e.target.closest(".varbtn");if(!b)return;
   S.v=b.dataset.v;reset(S.v);paint();});
-$("#notesbtn").addEventListener("click",()=>{S.notes=!S.notes;paint();});
+$("#notesbtn").addEventListener("click",()=>{
+  S.notes=!S.notes;
+  renderNotes();
+  $("#notesbtn").classList.toggle("on",S.notes);
+  xrm.setAttribute("data-notes",S.notes?"on":"off");
+  $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
+});
 $("#restart").addEventListener("click",()=>{reset(S.v);paint();});
 $("#dttoggle").addEventListener("click",()=>{const d=$("#devtools");
   d.setAttribute("data-open",d.getAttribute("data-open")==="1"?"0":"1");});
