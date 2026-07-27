@@ -178,8 +178,9 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
   font-size:19px; cursor:pointer; font-family:var(--mono)}
 .stepper button:hover{background:var(--surface)}
 .stepper .val{flex:1; text-align:center; font-family:var(--mono); font-size:18px; font-weight:600; font-variant-numeric:tabular-nums}
-.stepper.sm button{width:34px; height:34px; font-size:16px}
-.stepper.sm .val{flex:0 0 auto; min-width:52px; font-size:15px; padding:0 6px}
+.stepper.sm{width:100%}
+.stepper.sm button{width:34px; height:34px; font-size:16px; flex:0 0 auto}
+.stepper.sm .val{flex:1; font-size:15px; padding:0 6px}
 .stakesplit{display:flex; align-items:stretch; gap:20px}
 .stakecol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:center}
 .stakediv{width:1px; background:var(--line); flex:0 0 auto}
