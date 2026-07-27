@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Punt · XRM-001 — Cross-room play</title>
+<style>*{box-sizing:border-box}html,body{margin:0;padding:0}html{background:var(--bg,#fff)}</style>
+</head>
+<body>
+<style>
+/* ============================================================= XRM-001
+   Cross-room play · 5 UX-pattern variations · grayscale wireframe
+   ============================================================= */
+:root{
+  --bg:#ffffff; --panel:#ffffff; --surface:#f4f4f4; --surface-2:#ececec;
+  --ink:#1a1a1a; --ink-2:#535353; --muted:#767676; --faint:#9b9b9b;
+  --line:#e4e4e4; --line-2:#d4d4d4; --line-strong:#bcbcbc;
+  --fill:#1a1a1a; --on-fill:#ffffff;
+  --accent:#1a1a1a; --accent-2:#1a1a1a;
+  --hatch:rgba(26,26,26,.06); --ring:rgba(26,26,26,.16);
+  --r:10px; --r-sm:7px; --r-lg:14px;
+  --mono:"Roboto Mono",ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --shadow:0 1px 2px rgba(26,26,26,.04);
+  --shadow-lg:0 18px 48px -20px rgba(26,26,26,.26);
+}
+/* Style skins are set by the in-app switch (bottom-left), not OS/viewer theme.
+   Default = light editorial mono. "brand" = dark, higher-VD with lime/vermilion accents. */
+:root[data-skin="brand"]{
+  --bg:#0d0d0e; --panel:#141416; --surface:#1c1c20; --surface-2:#26262b;
+  --ink:#f4f4ef; --ink-2:#b6b6b0; --muted:#9b9b94; --faint:#6f6f68;
+  --line:rgba(244,244,239,.10); --line-2:rgba(244,244,239,.16); --line-strong:rgba(244,244,239,.26);
+  --fill:#f4f4ef; --on-fill:#141416;
+  --accent:#b6fb6f; --accent-2:#ff5a36;
+  --hatch:rgba(244,244,239,.08); --ring:rgba(182,251,111,.32);
+  --shadow:0 1px 2px rgba(0,0,0,.5);
+  --shadow-lg:0 22px 56px -20px rgba(0,0,0,.75);
+}
+*{box-sizing:border-box}
+.xrm{
+  font-family:var(--sans); color:var(--ink); background:var(--panel);
+  min-height:100vh; -webkit-font-smoothing:antialiased; line-height:1.45;
+}
+
+/* ---------- app shell (full-viewport, responsive) ---------- */
+.appshell{width:100%; min-height:100vh; background:var(--panel)}
+
+/* app top bar (room context) */
+.appbar{display:flex; align-items:center; gap:10px; padding:13px 20px;
+  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:30; background:var(--panel)}
+@media (min-width:760px){ .appbar{padding:15px 32px} }
+.appbar .brand{font-weight:800; letter-spacing:-.03em; font-size:17px}
+.appbar .brandsub{font-family:var(--mono); font-size:10px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--muted); font-weight:500; margin-left:8px}
+.appbar .roomswitch{margin-left:auto; display:flex; gap:5px}
+.roompill{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; padding:5px 8px;
+  border:1px solid var(--line-2); border-radius:7px; color:var(--muted); display:flex; align-items:center; gap:5px}
+.roompill.on{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.roompill svg{width:12px; height:12px}
+
+.scroll{display:block}
+.pad{padding:22px 20px 96px; max-width:720px; margin:0 auto}
+@media (min-width:760px){ .pad{padding:34px 32px 96px} }
+
+/* two-pane on wider viewports */
+.layout{display:block; max-width:1180px; margin:0 auto}
+.rail{display:block; padding:22px 20px; border-bottom:1px solid var(--line)}
+.main{display:block; padding:20px 20px 96px}
+@media (min-width:760px){
+  .layout{display:grid; grid-template-columns:340px 1fr; gap:0; align-items:stretch}
+  .layout .rail{border-right:1px solid var(--line); border-bottom:none; padding:32px 28px; background:var(--surface); min-height:100%}
+  .layout .main{padding:32px 40px 96px; min-width:0}
+  .layout .rail.plain{background:var(--panel)}
+}
+
+/* ---------- primitives ---------- */
+.kicker{font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--muted); margin:0 0 8px}
+.h-lg{font-size:28px; font-weight:700; letter-spacing:-.022em; line-height:1.11; margin:0; text-wrap:balance}
+.h-md{font-size:16.5px; font-weight:650; letter-spacing:-.012em; margin:0}
+.txt{font-size:13.5px; color:var(--ink-2); margin:8px 0 0; max-width:60ch}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+.divider{height:1px; background:var(--line); margin:16px 0; border:0}
+.stack{display:flex; flex-direction:column}
+.gap6{gap:6px}.gap8{gap:8px}.gap10{gap:10px}.gap12{gap:12px}.gap14{gap:14px}.gap16{gap:16px}
+.row{display:flex; align-items:center}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+.grow{flex:1 1 auto; min-width:0}
+.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}.mt24{margin-top:24px}
+
+/* buttons */
+.btn{font-family:var(--sans); font-size:14px; font-weight:600; border-radius:9px;
+  padding:13px 16px; border:1px solid var(--accent); background:var(--accent); color:var(--on-fill);
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; transition:transform .12s, opacity .12s, background .15s; text-align:center}
+.btn:hover{opacity:.9}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-2)}
+.btn.ghost:hover{background:var(--surface); opacity:1}
+.btn.sm{padding:9px 13px; font-size:12.5px; width:auto; border-radius:9px}
+.btn:disabled{opacity:.4; cursor:not-allowed}
+.btn .m{font-family:var(--mono); font-size:12px; opacity:.75}
+.btnrow{display:flex; gap:10px}
+button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px solid var(--ink); outline-offset:2px; border-radius:8px}
+
+/* card */
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r);
+  padding:16px}
+.card.flat{box-shadow:none; background:var(--surface)}
+.card.sel{border-color:var(--fill); box-shadow:0 0 0 1px var(--fill)}
+
+/* room tag + icon */
+.rtag{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; padding:3px 7px;
+  border:1px solid var(--line-2); border-radius:6px; color:var(--ink-2); display:inline-flex;
+  align-items:center; gap:5px; white-space:nowrap; background:var(--panel)}
+.rtag svg{width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:1.7}
+.rtag.solid{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.ricon{width:26px; height:26px; border-radius:8px; border:1px solid var(--line-2); display:grid;
+  place-items:center; flex:0 0 auto; background:var(--panel)}
+.ricon svg{width:15px; height:15px; stroke:var(--ink); fill:none; stroke-width:1.7}
+.ricon.solid{background:var(--fill); border-color:var(--fill)}
+.ricon.solid svg{stroke:var(--on-fill)}
+
+/* hatch placeholder */
+.hatch{background-image:repeating-linear-gradient(45deg,var(--hatch) 0 1px,transparent 1px 7px);
+  border:1px solid var(--line); border-radius:var(--r-sm); position:relative}
+.hatch .lbl{position:absolute; inset:auto 8px 8px; font-family:var(--mono); font-size:9.5px;
+  letter-spacing:.08em; color:var(--muted); text-transform:uppercase}
+.portrait{width:100%; aspect-ratio:1/1; border-radius:var(--r-sm)}
+.hatch.r-media{aspect-ratio:16/9; width:100%; max-height:240px}
+.hatch.r-card{aspect-ratio:5/7}
+
+/* leg row (persistent play) */
+.leg{display:flex; gap:12px; align-items:center; padding:13px; border-radius:11px; color:var(--ink);
+  border:1px solid var(--line); background:var(--panel); position:relative; transition:.18s}
+.leg .body{min-width:0; flex:1 1 auto}
+.leg .verb{font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase}
+.leg .ttl{font-size:13.5px; font-weight:560; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.leg .sub{font-size:11.5px; color:var(--muted); margin-top:1px; font-family:var(--mono)}
+.leg .st{flex:0 0 auto}
+.leg[data-s="locked"]{border-style:dashed; opacity:.6}
+.leg[data-s="ready"]{border-color:var(--line-strong)}
+.leg[data-s="ready"]::before{content:""; position:absolute; inset:-1px; border-radius:12px;
+  box-shadow:0 0 0 2px var(--ring); animation:pulse 2s infinite; pointer-events:none}
+.leg[data-s="done"]{background:var(--surface)}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+.tick{width:22px; height:22px; border-radius:50%; border:1px solid var(--line-2); display:grid; place-items:center}
+.tick svg{width:12px; height:12px; stroke:var(--on-fill); fill:none; stroke-width:2.4}
+.tick.done{background:var(--accent); border-color:var(--accent)}
+.tick.lock svg{stroke:var(--muted); stroke-width:1.7}
+.stepnum{font-family:var(--mono); font-size:11px; color:var(--muted); width:22px; height:22px;
+  border:1px solid var(--line-2); border-radius:50%; display:grid; place-items:center}
+
+/* multiplier meter */
+.meter{display:flex; gap:4px; align-items:stretch; height:9px; margin-top:6px}
+.meter i{flex:1; background:var(--surface-2); border-radius:3px; overflow:hidden; position:relative}
+.meter i.on{background:var(--fill)}
+.meter i.bonus{flex:.7; background:transparent; border:1px dashed var(--line-strong)}
+.meter i.bonus.on{background:var(--accent); border-color:var(--accent); border-style:solid}
+
+/* stat / payout */
+.payline{display:flex; align-items:baseline; gap:10px; font-family:var(--mono); font-variant-numeric:tabular-nums}
+.payline .big{font-family:var(--sans); font-size:44px; font-weight:700; letter-spacing:-.03em; color:var(--accent); line-height:1}
+.payline .was{font-size:14px; color:var(--muted); text-decoration:line-through}
+.statgrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px}
+.stat{border:1px solid var(--line); border-radius:11px; padding:12px}
+.stat .k{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.stat .v{font-family:var(--mono); font-size:19px; font-weight:640; margin-top:5px; font-variant-numeric:tabular-nums}
+.stat.hero{background:var(--accent); border-color:var(--accent)}
+.stat.hero .k{color:var(--on-fill); opacity:.62}
+.stat.hero .v{color:var(--on-fill)}
+
+/* stake stepper */
+.stepper{display:flex; align-items:center; border:1px solid var(--line-2); border-radius:11px; overflow:hidden}
+.stepper button{width:44px; height:44px; border:0; background:var(--panel); color:var(--ink);
+  font-size:19px; cursor:pointer; font-family:var(--mono)}
+.stepper button:hover{background:var(--surface)}
+.stepper .val{flex:1; text-align:center; font-family:var(--mono); font-size:18px; font-weight:600; font-variant-numeric:tabular-nums}
+
+/* pill / badge */
+.badge{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  padding:4px 8px; border-radius:100px; border:1px solid var(--line-2); color:var(--ink-2)}
+.badge.solid{background:var(--accent); color:var(--on-fill); border-color:var(--accent)}
+.badge.live{border-color:var(--ink); color:var(--ink); display:inline-flex; gap:6px; align-items:center}
+.badge.live::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--accent-2); animation:pulse 1.4s infinite}
+.countdown{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:600; color:var(--accent-2)}
+
+/* why-note (inline product transparency) */
+.why{border:1px solid var(--line); border-left:2px solid var(--ink); border-radius:9px;
+  padding:11px 13px; background:var(--surface); font-size:12px; color:var(--ink-2); margin-top:14px}
+.why b{color:var(--ink); font-weight:600}
+
+/* enter animation */
+.anim{animation:enter .34s cubic-bezier(.2,.7,.2,1)}
+@keyframes enter{from{opacity:0; transform:translateY(7px)}to{opacity:1; transform:none}}
+
+/* timeline (V3) */
+.timeline{display:flex; align-items:center; gap:0; margin:14px 0 4px}
+.timeline .node{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; position:relative}
+.timeline .node::after{content:""; position:absolute; top:11px; left:50%; width:100%; height:1.5px; background:var(--line-2); z-index:0}
+.timeline .node:last-child::after{display:none}
+.timeline .dot{width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line-2);
+  background:var(--panel); z-index:1; display:grid; place-items:center; font-family:var(--mono); font-size:9px}
+.timeline .dot.on{background:var(--fill); border-color:var(--fill); color:var(--on-fill)}
+.timeline .dot.now{border-color:var(--ink); box-shadow:0 0 0 3px var(--ring)}
+.timeline .cap{font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; color:var(--muted)}
+
+/* station card (V3) */
+.station{border:1px solid var(--line); border-radius:var(--r); padding:15px; background:var(--panel); position:relative}
+.station.up{border-color:var(--ink); box-shadow:var(--shadow)}
+.station.dim{opacity:.55}
+
+/* V3 interstitial — confirms the step you just took, auto-dismisses */
+.interstitial{margin-top:16px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface);
+  padding:18px 18px 20px; position:relative; overflow:hidden; cursor:pointer}
+.interstitial .ib-top{display:flex; align-items:center; gap:10px}
+.ib-badge{width:30px; height:30px; border-radius:50%; background:var(--accent); display:grid; place-items:center; flex:0 0 auto}
+.ib-badge svg{width:15px; height:15px; stroke:var(--on-fill); fill:none; stroke-width:2.6}
+.ib-delta{display:flex; align-items:baseline; gap:8px; margin-top:15px; font-family:var(--mono); font-variant-numeric:tabular-nums}
+.ib-delta .d{font-size:22px; font-weight:700; color:var(--accent); letter-spacing:-.01em}
+.ib-delta .t{font-size:12px; color:var(--muted)}
+.ib-next{display:flex; align-items:center; gap:9px; margin-top:15px; padding-top:14px; border-top:1px solid var(--line);
+  font-size:12.5px; color:var(--ink-2)}
+.ib-next svg{width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.7; flex:0 0 auto}
+.ib-hint{font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-top:14px}
+.ib-prog{position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--surface-2)}
+.ib-prog i{display:block; height:100%; background:var(--accent); transform-origin:left; animation:ibprog 2.8s linear forwards}
+@keyframes ibprog{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+/* puck (V5) */
+.roomstage{position:relative; min-height:calc(100vh - 62px); display:flex; flex-direction:column}
+.roombg{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:14px; padding:40px; text-align:center; color:var(--muted)}
+.roombg .big-icon{width:66px; height:66px; border:1px dashed var(--line-2); border-radius:18px; display:grid; place-items:center}
+.roombg .big-icon svg{width:32px; height:32px; stroke:var(--faint); fill:none; stroke-width:1.4}
+.puck{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; width:min(460px,calc(100vw - 32px));
+  background:var(--panel); border:1px solid var(--line-strong); border-radius:18px; box-shadow:var(--shadow-lg);
+  padding:15px 16px; cursor:pointer; transition:transform .2s; z-index:40}
+.puck:hover{transform:translateX(-50%) translateY(-2px)}
+.puck.sheet{cursor:default}
+.sheetgrip{width:34px; height:4px; border-radius:3px; background:var(--line-2); margin:-4px auto 12px}
+.puck-legs{display:flex; gap:6px; margin-top:10px}
+.puck-legs i{flex:1; height:5px; border-radius:3px; background:var(--surface-2)}
+.puck-legs i.on{background:var(--fill)}
+.puck-legs i.now{background:var(--fill); animation:pulse 1.6s infinite}
+
+/* conviction ring (V4) */
+.convo{display:flex; align-items:center; gap:14px}
+.ring{width:74px; height:74px; flex:0 0 auto; position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute; inset:0; display:grid; place-items:center; font-family:var(--mono); font-weight:680; font-size:15px}
+.ways{display:flex; flex-direction:column; gap:8px; margin-top:14px}
+.way{display:flex; gap:11px; align-items:center; padding:12px; border:1px solid var(--line); border-radius:11px}
+.way[data-s="locked"]{border-style:dashed; opacity:.55}
+.way[data-s="done"]{background:var(--surface)}
+
+/* toast */
+.toast{position:fixed; left:50%; top:18px; transform:translateX(-50%) translateY(-10px);
+  background:var(--fill); color:var(--on-fill); font-size:12.5px; font-weight:500;
+  padding:10px 16px; border-radius:100px; box-shadow:var(--shadow-lg); opacity:0; pointer-events:none;
+  transition:.25s; z-index:60; font-family:var(--mono); letter-spacing:.02em; white-space:nowrap}
+.toast.show{opacity:1; transform:translateX(-50%)}
+
+/* UX notes — slide-out tray to the right of the concept switcher */
+.dt-notes-tray{position:absolute; left:calc(100% + 8px); bottom:-1px; width:326px;
+  background:var(--surface); border:1px solid var(--line-2); border-radius:16px;
+  padding:16px; box-shadow:var(--shadow-lg); max-height:min(72vh,600px); overflow-y:auto;
+  opacity:0; transform:translateX(-16px); pointer-events:none;
+  transition:opacity .2s ease, transform .24s cubic-bezier(.2,.7,.2,1)}
+.devtools[data-notes="on"] .dt-notes-tray{opacity:1; transform:translateX(0); pointer-events:auto}
+.tray-title{font-family:var(--mono); font-size:11px; letter-spacing:.05em; font-weight:600; color:var(--ink)}
+.tray-pattern{font-family:var(--mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.tray-sec{margin-top:12px; padding-top:12px; border-top:1px solid var(--line)}
+.tray-sec .tag{display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
+.tray-sec p{margin:0; font-size:12px; line-height:1.46; color:var(--ink-2)}
+@media (max-width:760px){
+  .dt-notes-tray{left:0; right:auto; bottom:calc(100% + 8px); width:100%; max-height:52vh}
+  .devtools[data-notes="on"] .dt-notes-tray{transform:translateY(0)}
+  .dt-notes-tray{transform:translateY(10px)}
+}
+
+/* ---------- dev tools ---------- */
+.devtools{position:fixed; left:18px; bottom:18px; z-index:1000; font-family:var(--sans)}
+.dt-toggle{display:flex; align-items:center; gap:9px; background:var(--fill); color:var(--on-fill);
+  border:0; border-radius:12px; padding:11px 14px; cursor:pointer; box-shadow:var(--shadow-lg);
+  font-size:12.5px; font-weight:560; font-family:var(--mono); letter-spacing:.04em}
+.dt-toggle .grip{display:grid; grid-template-columns:repeat(2,4px); gap:3px}
+.dt-toggle .grip i{width:4px; height:4px; border-radius:1px; background:var(--on-fill); opacity:.85}
+.dt-toggle .code{opacity:.6}
+.dt-bar{display:flex; align-items:center; gap:8px}
+.skin-switch{display:inline-flex; align-items:center; gap:3px; background:var(--fill);
+  border-radius:12px; padding:4px; box-shadow:var(--shadow-lg)}
+.skin-switch .opt{width:30px; height:30px; border:0; border-radius:9px; background:transparent;
+  cursor:pointer; display:grid; place-items:center; color:var(--on-fill); opacity:.45; transition:.15s}
+.skin-switch .opt svg{width:16px; height:16px}
+.skin-switch .opt:hover{opacity:.85}
+:root:not([data-skin="brand"]) .skin-switch .opt[data-skin=""],
+:root[data-skin="brand"] .skin-switch .opt[data-skin="brand"]{opacity:1; background:var(--on-fill); color:var(--fill)}
+.dt-panel{position:absolute; left:0; bottom:calc(100% + 10px); width:326px; background:var(--panel);
+  border:1px solid var(--line-2); border-radius:16px; box-shadow:var(--shadow-lg); padding:14px;
+  display:none; animation:enter .2s ease}
+.devtools[data-open="1"] .dt-panel{display:block}
+.dt-panel h4{margin:0 0 3px; font-size:12px; font-family:var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.dt-panel .desc{font-size:11.5px; color:var(--muted); margin:0 0 12px; line-height:1.4}
+.dt-sec{font-size:10px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:12px 0 7px}
+.varlist{display:flex; flex-direction:column; gap:6px}
+.varbtn{display:flex; gap:11px; align-items:flex-start; text-align:left; width:100%; cursor:pointer; color:var(--ink);
+  border:1px solid var(--line); border-radius:11px; padding:10px 11px; background:var(--panel); transition:.14s}
+.varbtn:hover{border-color:var(--line-strong); background:var(--surface)}
+.varbtn.on{border-color:var(--fill); box-shadow:0 0 0 1px var(--fill)}
+.varbtn .vc{font-family:var(--mono); font-size:11px; font-weight:640; border:1px solid var(--line-2);
+  border-radius:7px; padding:3px 6px; flex:0 0 auto; min-width:30px; text-align:center}
+.varbtn.on .vc{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.varbtn .vn{display:block; font-size:12.5px; font-weight:600}
+.varbtn .vp{display:block; font-size:11px; color:var(--muted); margin-top:3px; line-height:1.35}
+.seg{display:flex; border:1px solid var(--line-2); border-radius:10px; overflow:hidden}
+.seg button{flex:1; border:0; background:var(--panel); padding:9px; font-size:12px; cursor:pointer;
+  color:var(--ink-2); font-family:var(--mono); letter-spacing:.03em; display:flex; align-items:center; justify-content:center; gap:6px}
+.seg button.on{background:var(--fill); color:var(--on-fill)}
+.dt-row{display:flex; gap:8px; margin-top:8px}
+.dt-row .seg{flex:1}
+.chkbtn{border:1px solid var(--line-2); border-radius:10px; background:var(--panel); padding:9px 11px;
+  font-size:12px; cursor:pointer; color:var(--ink-2); font-family:var(--mono); display:flex; align-items:center; gap:8px}
+.chkbtn.on{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.chkbtn .box{width:13px; height:13px; border:1.4px solid currentColor; border-radius:3px}
+.chkbtn.on .box{background:var(--on-fill); border-color:var(--on-fill)}
+.dt-foot{display:flex; gap:8px; margin-top:12px}
+.dt-foot .btn.sm{flex:1; width:auto}
+.reduced *{animation:none !important}
+</style>
+
+<div class="xrm" id="xrm" data-notes="off">
+  <div class="appshell" id="stage">
+    <div id="app"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="devtools" id="devtools" data-open="0">
+  <div class="dt-panel">
+    <h4>XRM-001 · Concept switcher</h4>
+    <p class="desc">One structured play — <b>Call it · Land it · Score it</b> — spanning Predict, Collect &amp; Play. Five ways to make the cross-room move feel deliberate.</p>
+    <div class="dt-sec">Variation</div>
+    <div class="varlist" id="varlist"></div>
+    <div class="dt-foot">
+      <button class="chkbtn" id="notesbtn"><span class="box"></span> UX notes</button>
+      <button class="btn ghost sm" id="restart" style="flex:1;width:auto">↺ Restart flow</button>
+    </div>
+    <div class="dt-notes-tray" id="notesband"></div>
+  </div>
+  <div class="dt-bar">
+    <button class="dt-toggle" id="dttoggle">
+      <span class="grip"><i></i><i></i><i></i><i></i></span>
+      <span>CONCEPTS</span><span class="code" id="dtcode">V1</span>
+    </button>
+    <div class="skin-switch" id="skinswitch" role="group" aria-label="Visual style">
+      <button class="opt" data-skin="" aria-label="Light mono" title="Light · mono">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4.3"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.1 5.1l1.6 1.6M17.3 17.3l1.6 1.6M18.9 5.1l-1.6 1.6M6.7 17.3l-1.6 1.6"/></svg>
+      </button>
+      <button class="opt" data-skin="brand" aria-label="Dark brand" title="Dark · brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.2A8 8 0 1 1 9.8 4a6.3 6.3 0 0 0 10.2 10.2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const app=$("#app"), stage=$("#stage"), xrm=$("#xrm");
+if(matchMedia("(prefers-reduced-motion:reduce)").matches) xrm.classList.add("reduced");
+
+/* ---------- icons ---------- */
+const IC={
+  PRE:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="2"/><path d="M12 1.5V5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg>',
+  PLY:'<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>',
+  COL:'<svg viewBox="0 0 24 24"><rect x="6.5" y="4" width="13" height="17" rx="2.2"/><path d="M4.2 7.2 3 8a2 2 0 0 0-.6 2.5l3.4 9.2"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>',
+  lock:'<svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>',
+  cross:'<svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg>'
+};
+const ROOM={PRE:{name:"Predict",verb:"Call it"},COL:{name:"Collect",verb:"Land it"},PLY:{name:"Play",verb:"Score it"}};
+function ricon(code,solid){return `<span class="ricon ${solid?'solid':''}">${IC[code]}</span>`}
+function rtag(code,solid){return `<span class="rtag ${solid?'solid':''}">${IC[code]}${ROOM[code].name}</span>`}
+
+/* ---------- shared play data ---------- */
+const PLAY={
+  event:"UFC 299 · Main Card", when:"Tonight · 10:00 PM",
+  entity:"Alex Pereira",
+  legs:{
+    PRE:{verb:"Call it",title:"Pereira by KO / TKO",sub:"Round 2 · +600",short:"Call the fight",room:"PRE"},
+    COL:{verb:"Land it",title:"UFC 299 Pack",sub:"Shot at the Pereira rookie",short:"Rip the pack",room:"COL"},
+    PLY:{verb:"Score it",title:"Fight-Night Blackjack",sub:"Clear a 21 to bank the run",short:"Run the table",room:"PLY"}
+  },
+  order:["PRE","COL","PLY"]
+};
+const ENTRY=20, SINGLE=140, CROSS=434; // payout story: single-room vs full cross-room
+
+/* ---------- variation meta ---------- */
+const META={
+  v1:{code:"V1",name:"The Combo Slip",pattern:"Bundle-first parlay",
+      note:"All three legs committed up front as one ticket, one stake, one multiplier — then you visit each room to resolve the leg you already own.",
+      move:"Movement = resolving your own pre-committed bet, never a new decision to 'go somewhere else'.",
+      risk:"Legs can feel simultaneous rather than causal; the room visit must add play, not just confirm."},
+  v2:{code:"V2",name:"The Run",pattern:"Causal chain (gated)",
+      note:"Each room's result fuels the next. The call funds the pack; the pull becomes a table token. Leg 2 stays locked until leg 1 lands.",
+      move:"Movement is the only way forward and every move is powered by the last — unmistakably one continuous play.",
+      risk:"Gating can read as a forced funnel if a losing leg dead-ends the run; needs a graceful fail path."},
+  v3:{code:"V3",name:"The Event Deck",pattern:"Live event, one score",
+      note:"Anchored to tonight's event. The three rooms are stations on one timeline with a single running score; each surfaces by real urgency.",
+      move:"You're playing the night, not three apps — timing pulls you room to room the way a live card already does.",
+      risk:"Only works around real live moments; outside an event window the spine disappears."},
+  v4:{code:"V4",name:"The Object Thread",pattern:"Entity as through-line",
+      note:"One person — Pereira — is the spine. He appears as a market, then a card, then a table. A shared conviction meter fills as you back him in more rooms.",
+      move:"Each room is another way to back the SAME belief — 'back yourself, everywhere' made literal.",
+      risk:"Depends on a cross-room entity existing; abstract markets without a card/table can't thread."},
+  v5:{code:"V5",name:"The Carry",pattern:"Persistent play object",
+      note:"The play is a floating puck that travels as global chrome. You act inline via a sheet and never leave your context; the puck advances to the next room.",
+      move:"Continuity is maximal — the play is a thing you carry, not a set of pages you navigate between.",
+      risk:"Inline sheets can hide that a real room switch happened; the 'where am I' cue must stay legible."}
+};
+const ORDER=["v1","v2","v3","v4","v5"];
+
+/* ---------- state ---------- */
+const S={v:"v1",notes:false,
+  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false},
+  v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
+  v3:{i:0,phase:"deck"}, // i = stations resolved (0..3); phase deck|interstitial
+  v4:{n:0},    // conviction 0..3
+  v5:{n:0,open:false} // n legs done 0..3, sheet open
+};
+let v3timer=null; // auto-advance for the Event Deck interstitial
+function reset(v){
+  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false};
+  if(v==="v2")S.v2={step:0};
+  if(v==="v3"){clearTimeout(v3timer);S.v3={i:0,phase:"deck"};}
+  if(v==="v4")S.v4={n:0};
+  if(v==="v5")S.v5={n:0,open:false};
+}
+
+/* ---------- shared components ---------- */
+function meter(count,bonus){
+  return `<div class="meter">
+    <i class="${count>=1?'on':''}"></i><i class="${count>=2?'on':''}"></i><i class="${count>=3?'on':''}"></i>
+    <i class="bonus ${bonus?'on':''}"></i></div>`;
+}
+function tick(state){
+  if(state==="done")return `<span class="tick done">${IC.check}</span>`;
+  if(state==="locked")return `<span class="tick lock">${IC.lock}</span>`;
+  return `<span class="stepnum">${state}</span>`;
+}
+function legRow(code,state,idx){
+  const l=PLAY.legs[code];
+  const st=state==="done"?"done":state==="locked"?"locked":"ready";
+  const mark=state==="done"?tick("done"):state==="locked"?tick("locked"):tick(idx);
+  return `<div class="leg" data-s="${st}">
+    ${ricon(code,state==="done")}
+    <div class="body">
+      <div class="verb">${l.verb} · ${ROOM[code].name}</div>
+      <div class="ttl">${l.title}</div>
+      <div class="sub">${l.sub}</div>
+    </div>
+    <div class="st">${mark}</div>
+  </div>`;
+}
+function payoutBlock(){
+  return `<div class="statgrid">
+    <div class="stat"><div class="k">Base</div><div class="v">$${SINGLE}</div></div>
+    <div class="stat hero"><div class="k">Cross-room bonus</div><div class="v">+15%</div></div>
+  </div>`;
+}
+function completeScreen(headline){
+  return `<div class="pad anim">
+    <div class="row between"><span class="kicker">Play complete</span><span class="badge solid">XRM ✓</span></div>
+    <h2 class="h-lg mt8">${headline}</h2>
+    ${meter(3,true)}
+    <div class="row gap8 mt16 wrap">${rtag("PRE",1)}${rtag("COL",1)}${rtag("PLY",1)}
+      <span class="badge">3 / 3 rooms</span></div>
+    <div class="mt20 payline"><span class="big">$${CROSS}</span><span class="was">$${SINGLE}</span>
+      <span class="badge">banked</span></div>
+    ${payoutBlock()}
+    <button class="btn mt20" data-a="restart">Run another cross-room play</button>
+    <button class="btn ghost mt8" data-a="restart">Back to start</button>
+  </div>`;
+}
+function appbar(active){
+  return `<div class="appbar"><span class="brand">Punt</span></div>`;
+}
+
+/* ============================================================ V1 · SLIP */
+const V1={
+  view(){
+    const s=S.v1;
+    if(s.stage==="build")return this.build();
+    return this.active();
+  },
+  build(){
+    const s=S.v1;
+    const legs=PLAY.order.map((c,i)=>legRow(c,i+1,i+1)).join("");
+    return appbar()+`<div class="scroll"><div class="pad anim">
+      <span class="kicker">Featured · cross-room combo</span>
+      <h2 class="h-lg mt8">The Pereira Run</h2>
+      <p class="txt">One ticket. Three rooms. ${PLAY.event} — ${PLAY.when}.</p>
+      <div class="card mt16" style="padding:14px">
+        <div class="row between"><span class="rtag solid">${IC.cross}XRM COMBO</span>
+          <span class="mono muted" style="font-size:12px">×18.9 combined</span></div>
+        <div class="stack gap8 mt12">${legs}</div>
+        <div class="mt12">${meter(0,false)}</div>
+        <div class="row between mt12" style="font-family:var(--mono);font-size:11px;color:var(--muted)">
+          <span>Cross-room bonus</span><span>+15% at 3 / 3</span></div>
+      </div>
+      <div class="card mt16">
+        <div class="row between"><span class="kicker" style="margin:0">Your stake</span>
+          <span class="mono muted" style="font-size:12px">one entry, all legs</span></div>
+        <div class="row gap12 mt12">
+          <div class="stepper grow">
+            <button data-a="stake" data-d="-5">–</button>
+            <span class="val">$${s.stake}</span>
+            <button data-a="stake" data-d="5">+</button>
+          </div>
+        </div>
+        <div class="row between mt12 mono" style="font-size:12.5px">
+          <span class="muted">To win (all rooms)</span><span style="font-weight:640">$${Math.round(s.stake*CROSS/ENTRY)}</span></div>
+      </div>
+      <button class="btn mt16" data-a="place">Place combo · $${s.stake}</button>
+    </div></div>`;
+  },
+  active(){
+    const s=S.v1, cnt=PLAY.order.filter(c=>s.done[c]).length, all=cnt===3;
+    if(all)return completeScreen("You called it, landed it, and scored it.");
+    // rail: persistent slip
+    const legs=PLAY.order.map((c,i)=>{
+      const done=s.done[c]; const cur=s.active===c;
+      const st=done?"done":cur?"ready":(i+1);
+      const state=done?"done":cur?"ready":"ready";
+      return `<button class="leg" data-s="${done?'done':cur?'ready':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${cur?'var(--surface)':'var(--panel)'}">
+        ${ricon(c,done)}
+        <div class="body"><div class="verb">${PLAY.legs[c].verb} · ${ROOM[c].name}</div>
+        <div class="ttl">${PLAY.legs[c].title}</div>
+        <div class="sub">${done?'Resolved':cur?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
+        <div class="st">${done?tick("done"):IC_arrow()}</div></button>`;
+    }).join("");
+    const rail=`<div class="rail">
+      <div class="row between"><span class="rtag solid">${IC.cross}XRM SLIP</span>
+        <span class="badge live">LIVE</span></div>
+      <h3 class="h-md mt12">The Pereira Run</h3>
+      <div class="mono muted" style="font-size:11.5px;margin-top:3px">Stake $${s.stake} · to win $${Math.round(s.stake*CROSS/ENTRY)}</div>
+      ${meter(cnt,false)}
+      <div class="stack gap8 mt16">${legs}</div>
+      <div class="mono muted mt12" style="font-size:11px">${cnt}/3 rooms resolved</div>
+    </div>`;
+    // main: current room resolve, or prompt
+    let main;
+    if(s.active){ main=this.roomPanel(s.active); }
+    else{
+      main=`<div class="main"><span class="kicker">Combo live</span>
+        <h2 class="h-lg mt8">Three rooms to play.</h2>
+        <p class="txt">Tap a leg to play it. Your slip travels with you.</p></div>`;
+    }
+    return appbar(s.active)+`<div class="scroll"><div class="layout">${rail}${main}</div></div>`;
+  },
+  roomPanel(c){
+    const l=PLAY.legs[c];
+    const body={
+      PRE:`<p class="txt">Lock your call on the main event. This is leg 1 of your combo.</p>
+        <div class="card flat mt16"><div class="row between"><span>${l.title}</span><span class="mono" style="font-weight:640">+600</span></div>
+        <div class="hatch r-media mt12"><span class="lbl">Fight card · Pereira vs. Hill</span></div></div>`,
+      COL:`<p class="txt">Rip your UFC 299 pack. A hit on the Pereira rookie boosts the same ticket.</p>
+        <div class="row gap10 mt16">${[0,1,2].map(i=>`<div class="hatch r-card" style="flex:1"><span class="lbl">Card ${i+1}</span></div>`).join("")}</div>`,
+      PLY:`<p class="txt">Take the run to the Fight-Night table. Clear a 21 to bank the whole combo.</p>
+        <div class="hatch r-media mt16"><span class="lbl">Blackjack · seat open</span></div>`
+    };
+    return `<div class="main anim">
+      <button class="btn ghost sm" data-a="back" style="margin-bottom:14px">← Back to slip</button>
+      <div class="row gap8">${rtag(c,1)}<span class="badge">Leg ${PLAY.order.indexOf(c)+1} of 3</span></div>
+      <h2 class="h-lg mt12">${l.verb}: ${l.title}</h2>
+      ${body[c]}
+      <button class="btn mt20" data-a="resolve" data-c="${c}">Resolve ${ROOM[c].name} leg →</button>
+    </div>`;
+  },
+  on(a,ds){
+    const s=S.v1;
+    if(a==="stake"){s.stake=Math.max(5,s.stake+ +ds.d);}
+    else if(a==="place"){s.placed=true;s.stage="active";}
+    else if(a==="leg"){s.active=ds.c;}
+    else if(a==="back"){s.active=null;}
+    else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
+  }
+};
+function IC_arrow(){return '<span class="mono muted" style="font-size:15px">›</span>';}
+
+/* ============================================================ V2 · RUN */
+const V2={
+  rungs(){
+    const s=S.v2;
+    // state per rung: done / ready(now) / locked
+    const stt=c=>{
+      if(c==="PRE")return s.step>=1?"done":"now";
+      if(c==="COL")return s.step>=3?"done":s.step>=2?"now":"locked";
+      if(c==="PLY")return s.step>=5?"done":s.step>=4?"now":"locked";
+    };
+    return PLAY.order.map((c,i)=>{
+      const st=stt(c);
+      return `<div class="leg" data-s="${st==='now'?'ready':st==='done'?'done':'locked'}">
+        ${ricon(c,st==="done")}
+        <div class="body"><div class="verb">Step ${i+1} · ${ROOM[c].name}</div>
+        <div class="ttl">${PLAY.legs[c].short}</div>
+        <div class="sub">${st==="locked"?"Unlocks from step "+i:st==="done"?"Cleared":"Now"}</div></div>
+        <div class="st">${st==="done"?tick("done"):st==="locked"?tick("locked"):tick(i+1)}</div>
+      </div>`;
+    }).join("");
+  },
+  view(){
+    const s=S.v2;
+    if(s.step>=6||s.step===5)return completeScreen("The run held all the way through.");
+    const rail=`<div class="rail">
+      <div class="row between"><span class="rtag solid">${IC.cross}THE RUN</span>
+        <span class="badge live">LIVE</span></div>
+      <h3 class="h-md mt12">One play, three links</h3>
+      <div class="mono muted" style="font-size:11.5px;margin-top:3px">Each link fuels the next</div>
+      <div class="stack gap8 mt16">${this.rungs()}</div>
+    </div>`;
+    return appbar(this.activeRoom())+`<div class="scroll"><div class="layout">${rail}<div class="main">${this.main()}</div></div></div>`;
+  },
+  activeRoom(){const s=S.v2;return s.step<=1?"PRE":s.step<=3?"COL":"PLY";},
+  main(){
+    const s=S.v2;
+    if(s.step===0)return `<div class="anim"><div class="row gap8">${rtag("PRE",1)}<span class="badge">Step 1 of 3</span></div>
+      <h2 class="h-lg mt12">Call the fight.</h2>
+      <p class="txt">Win by KO/TKO and your payout rolls straight into the next play.</p>
+      <div class="card flat mt16"><div class="row between"><span>Pereira by KO / TKO · R2</span><span class="mono" style="font-weight:640">+600</span></div>
+        <div class="hatch r-media mt12"><span class="lbl">Main event</span></div></div>
+      <button class="btn mt20" data-a="next">Lock the call · $${ENTRY}</button></div>`;
+    if(s.step===1)return `<div class="anim"><span class="badge solid">Step 1 cleared ✓</span>
+      <h2 class="h-lg mt12">Called it. +$${SINGLE}.</h2>
+      <p class="txt">Your $${SINGLE} is staged. Roll it into the UFC 299 pack.</p>
+      <div class="card mt16"><div class="row between"><span class="mono muted" style="font-size:12px">Winnings staged</span><span class="mono" style="font-weight:640;font-size:18px">$${SINGLE}</span></div>
+        <div class="row between mt8" style="font-family:var(--mono);font-size:12px"><span class="muted">→ funds</span><span>UFC 299 Pack</span></div></div>
+      <button class="btn mt20" data-a="next">Roll $${SINGLE} into the pack →</button></div>`;
+    if(s.step===2)return `<div class="anim"><div class="row gap8">${rtag("COL",1)}<span class="badge">Step 2 of 3</span></div>
+      <h2 class="h-lg mt12">Land the pack.</h2>
+      <p class="txt">Bought with the call. Whatever you pull becomes your table multiplier.</p>
+      <div class="row gap10 mt16">${[0,1,2].map(i=>`<div class="hatch r-card" style="flex:1"><span class="lbl">Card ${i+1}</span></div>`).join("")}</div>
+      <button class="btn mt20" data-a="next">Rip the pack →</button></div>`;
+    if(s.step===3)return `<div class="anim"><span class="badge solid">Pereira rookie ✓</span>
+      <h2 class="h-lg mt12">You pulled the rookie.</h2>
+      <p class="txt">Your rookie converts to a ×1.5 table token.</p>
+      <div class="card mt16 row gap12"><div class="hatch r-card" style="width:64px"><span class="lbl">RC</span></div>
+        <div class="grow"><div style="font-weight:600">Pereira Rookie</div><div class="mono muted" style="font-size:12px">→ ×1.5 table token</div></div></div>
+      <button class="btn mt20" data-a="next">Carry token to the table →</button></div>`;
+    if(s.step===4)return `<div class="anim"><div class="row gap8">${rtag("PLY",1)}<span class="badge">Step 3 of 3</span></div>
+      <h2 class="h-lg mt12">Score it.</h2>
+      <p class="txt">Your ×1.5 token is live. Clear a 21 to bank the run.</p>
+      <div class="hatch r-media mt16"><span class="lbl">Blackjack · token ×1.5 active</span></div>
+      <button class="btn mt20" data-a="next">Play the hand →</button></div>`;
+    return "";
+  },
+  on(a){const s=S.v2; if(a==="next"){s.step++; if(s.step===1)toast("Call hit · +$"+SINGLE); if(s.step===3)toast("Pulled: Pereira rookie"); if(s.step===5)toast("Cross-room bonus unlocked");}}
+};
+
+/* ============================================================ V3 · EVENT DECK */
+const V3={
+  stations:["PRE","COL","PLY"],
+  caps:["Fight opens","Pack drops","Table live"],
+  liveNote:["Main event is live","Pack dropping now","Live table, seats open"],
+  scoreAt:[0,150,300,CROSS],
+  done:{
+    PRE:{tag:"Call locked",title:"You called it.",detail:"Pereira by KO/TKO at +600 is locked into tonight's run."},
+    COL:{tag:"Pack secured",title:"You pulled the rookie.",detail:"The Pereira rookie is yours — added to the night."},
+    PLY:{tag:"Score banked",title:"You cleared the table.",detail:"21 on the Fight-Night table — the run is complete."}
+  },
+  view(){
+    const s=S.v3;
+    if(s.i>=3)return completeScreen("You played the whole night in one score.");
+    const inter=s.phase==="interstitial";
+    const di=inter?s.i+1:s.i;                 // header reflects the step just earned
+    const nodes=this.stations.map((c,i)=>{
+      const on=i<di, now=!inter&&i===s.i;
+      return `<div class="node"><div class="dot ${on?'on':''} ${now?'now':''}">${on?'✓':i+1}</div>
+        <div class="cap">${ROOM[c].name}</div></div>`;}).join("");
+    const score=this.scoreAt[di];
+    let body;
+    if(inter){
+      body=this.interstitial(s.i);
+    }else{
+      const cards=this.stations.map((c,i)=>{
+        if(i<s.i)return "";
+        const up=i===s.i; const l=PLAY.legs[c];
+        const meta=[{t:"Closes in",v:"0:32"},{t:"Dropping",v:"now"},{t:"Seats",v:"3 open"}][i];
+        return `<div class="station ${up?'up':'dim'}" style="margin-top:12px">
+          <div class="row between"><span class="row gap8">${rtag(c,up)}</span>
+            ${up?`<span class="badge live">${meta.t} <span class="countdown">${meta.v}</span></span>`:`<span class="badge">${this.caps[i]}</span>`}</div>
+          <div class="h-md mt12">${l.title}</div>
+          <div class="mono muted" style="font-size:12px;margin-top:3px">${l.sub}</div>
+          ${up?`<button class="btn mt16" data-a="station" data-c="${c}">${l.verb} — add to tonight's score →</button>`
+               :`<div class="mono muted mt12" style="font-size:11.5px">Surfaces when it goes live</div>`}
+        </div>`;}).join("");
+      body=`<div class="mono muted mt16" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase">Live across your rooms — ranked by urgency</div>${cards}`;
+    }
+    return appbar(this.stations[Math.min(s.i,2)])+`<div class="scroll"><div class="pad anim">
+      <div class="row between"><span class="kicker" style="margin:0">Tonight · one score</span><span class="badge live">EVENT LIVE</span></div>
+      <h2 class="h-lg mt8">${PLAY.event}</h2>
+      <div class="timeline">${nodes}</div>
+      <div class="card mt16 row between" style="align-items:center">
+        <div><div class="mono muted" style="font-size:10.5px;letter-spacing:.1em">TONIGHT'S SCORE</div>
+          <div class="payline mt4"><span class="big">$${score}</span></div></div>
+        ${meter(di,di>=3)}
+      </div>
+      ${body}
+    </div></div>`;
+  },
+  interstitial(r){
+    const c=this.stations[r], d=this.done[c];
+    const total=this.scoreAt[r+1], delta=total-this.scoreAt[r];
+    const last=r+1>=3, nc=last?null:this.stations[r+1];
+    return `<div class="interstitial anim" data-a="skip" role="button" tabindex="0">
+      <div class="ib-top"><span class="ib-badge">${IC.check}</span>
+        <span class="kicker" style="margin:0">${d.tag}</span></div>
+      <h3 class="h-md mt12">${d.title}</h3>
+      <p class="txt" style="margin-top:6px">${d.detail}</p>
+      <div class="ib-delta"><span class="d">+${delta}</span><span class="t">to tonight's score · now $${total}</span></div>
+      <div class="ib-next">${last?IC.cross:IC[nc]}<span>${last?"Tallying your night…":"Next · "+ROOM[nc].name+" — "+this.liveNote[r+1]}</span></div>
+      <div class="ib-prog"><i></i></div>
+      <div class="ib-hint mono">tap to continue</div>
+    </div>`;
+  },
+  on(a){
+    const s=S.v3;
+    if(a==="station"){
+      if(s.phase==="interstitial")return;
+      s.phase="interstitial";
+      clearTimeout(v3timer);
+      v3timer=setTimeout(()=>{
+        if(S.v!=="v3"||S.v3.phase!=="interstitial")return;
+        S.v3.i++; S.v3.phase="deck";
+        if(S.v3.i>=3)toast("Cross-room bonus unlocked");
+        paint();
+      },2800);
+    }else if(a==="skip"){
+      if(s.phase!=="interstitial")return;
+      clearTimeout(v3timer);
+      s.i++; s.phase="deck";
+      if(s.i>=3)toast("Cross-room bonus unlocked");
+    }
+  }
+};
+
+/* ============================================================ V4 · OBJECT THREAD */
+const V4={
+  ways(){
+    const s=S.v4;
+    const data=[
+      {c:"PRE",t:"Back the call",d:"Pereira by KO/TKO · +600"},
+      {c:"COL",t:"Back the card",d:"Reserve his rookie · UFC 299 pack"},
+      {c:"PLY",t:"Back the table",d:"His Fight-Night table · ×1.5"}
+    ];
+    return data.map((w,i)=>{
+      const st=i<s.n?"done":i===s.n?"ready":"locked";
+      return `<div class="way" data-s="${st}">
+        ${ricon(w.c,st==="done")}
+        <div class="grow"><div style="font-weight:600;font-size:13.5px">${w.t}</div>
+          <div class="mono muted" style="font-size:11.5px;margin-top:2px">${w.d}</div></div>
+        ${st==="done"?tick("done"):st==="locked"?tick("locked"):`<button class="btn sm" data-a="back" data-c="${w.c}">Back him</button>`}
+      </div>`;
+    }).join("");
+  },
+  ring(){
+    const s=S.v4, pct=s.n/3, r=32, C=2*Math.PI*r, off=C*(1-pct);
+    return `<div class="ring"><svg width="74" height="74" viewBox="0 0 74 74">
+      <circle cx="37" cy="37" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="6"/>
+      <circle cx="37" cy="37" r="${r}" fill="none" stroke="var(--fill)" stroke-width="6" stroke-linecap="round"
+        stroke-dasharray="${C}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset .5s"/>
+    </svg><span class="num">${s.n}/3</span></div>`;
+  },
+  view(){
+    const s=S.v4;
+    if(s.n>=3)return completeScreen("Fully backed — the call, the card, and the table.");
+    return appbar(PLAY.order[Math.min(s.n,2)])+`<div class="scroll"><div class="pad anim">
+      <span class="kicker">One fighter · every room</span>
+      <div class="card mt8">
+        <div class="convo">
+          <div class="hatch portrait" style="width:74px;height:74px;flex:0 0 auto"><span class="lbl">${PLAY.entity.split(" ")[1]}</span></div>
+          <div class="grow"><div class="h-md">${PLAY.entity}</div>
+            <div class="mono muted" style="font-size:12px;margin-top:2px">UFC 299 · your through-line tonight</div></div>
+          ${this.ring()}
+        </div>
+        <div class="mono muted mt16" style="font-size:11px;letter-spacing:.1em">CONVICTION</div>
+      </div>
+      <h2 class="h-lg mt20">Back him, everywhere.</h2>
+      <p class="txt">Three ways to back Pereira tonight. The third unlocks your cross-room bonus.</p>
+      <div class="ways">${this.ways()}</div>
+    </div></div>`;
+  },
+  on(a,ds){const s=S.v4; if(a==="back"){s.n++; toast("Backed "+PLAY.entity+" · "+ROOM[ds.c].name); if(s.n>=3)toast("Cross-room bonus unlocked");}}
+};
+
+/* ============================================================ V5 · THE CARRY */
+const V5={
+  view(){
+    const s=S.v5;
+    if(s.n>=3)return completeScreen("You carried one play across all three rooms.");
+    const cur=PLAY.order[s.n];
+    const l=PLAY.legs[cur];
+    const legdots=PLAY.order.map((c,i)=>`<i class="${i<s.n?'on':i===s.n?'now':''}"></i>`).join("");
+    // room backdrop shows you HAVE moved rooms while puck persists
+    const bg=`<div class="roombg">
+      <div class="big-icon">${IC[cur]}</div>
+    </div>`;
+    let puck;
+    if(s.open){
+      puck=`<div class="puck sheet"><div class="sheetgrip"></div>
+        <div class="row gap8">${rtag(cur,1)}<span class="badge">Leg ${s.n+1} of 3 · same play</span></div>
+        <div class="h-md mt12">${l.verb}: ${l.title}</div>
+        <div class="mono muted" style="font-size:12px;margin-top:3px">${l.sub}</div>
+        <div class="hatch r-media mt12" style="max-height:132px"><span class="lbl">${ROOM[cur].name} · inline action</span></div>
+        <button class="btn mt12" data-a="do">Confirm ${ROOM[cur].name} — stay in the play</button>
+        <button class="btn ghost sm mt8" data-a="close" style="width:100%">Not yet</button></div>`;
+    }else{
+      puck=`<div class="puck" data-a="open">
+        <div class="row between"><span class="rtag solid">${IC.cross}THE PLAY</span>
+          <span class="mono muted" style="font-size:11px">${s.n}/3 · carrying</span></div>
+        <div class="row between mt12" style="align-items:center">
+          <div><div class="mono muted" style="font-size:10px;letter-spacing:.1em">NEXT</div>
+            <div style="font-weight:600;font-size:14.5px;margin-top:2px">${l.verb} in ${ROOM[cur].name}</div></div>
+          <span class="btn sm" style="pointer-events:none">Tap →</span></div>
+        <div class="puck-legs">${legdots}</div></div>`;
+    }
+    return appbar(cur)+`<div class="roomstage">${bg}${puck}</div>`;
+  },
+  on(a){const s=S.v5;
+    if(a==="open")s.open=true;
+    else if(a==="close")s.open=false;
+    else if(a==="do"){s.n++;s.open=false; toast(ROOM[PLAY.order[s.n-1]].name+" done · play advances"); if(s.n>=3)toast("Cross-room bonus unlocked");}
+  }
+};
+
+const V={v1:V1,v2:V2,v3:V3,v4:V4,v5:V5};
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1700);}
+
+/* ---------- notes band ---------- */
+function renderNotes(){
+  const m=META[S.v];
+  $("#notesband").innerHTML=`<div class="tray-title">${m.code} · ${m.name}</div>
+    <div class="tray-pattern">${m.pattern}</div>
+    <div class="tray-sec"><span class="tag">The object</span><p>${m.note}</p></div>
+    <div class="tray-sec"><span class="tag">Why this concept</span><p>${m.move}</p></div>
+    <div class="tray-sec"><span class="tag">Considerations</span><p>${m.risk}</p></div>`;
+}
+
+/* ---------- paint ---------- */
+function paint(){
+  app.innerHTML=V[S.v].view();
+  renderNotes();
+  $("#dtcode").textContent=META[S.v].code;
+  document.querySelectorAll(".varbtn").forEach(b=>b.classList.toggle("on",b.dataset.v===S.v));
+  $("#notesbtn").classList.toggle("on",S.notes);
+  xrm.setAttribute("data-notes",S.notes?"on":"off");
+  $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
+}
+
+/* ---------- events ---------- */
+app.addEventListener("click",e=>{
+  const t=e.target.closest("[data-a]");if(!t)return;
+  const a=t.dataset.a;
+  if(a==="restart"){reset(S.v);paint();return;}
+  V[S.v].on&&V[S.v].on(a,t.dataset);
+  paint();
+});
+
+/* ---------- dev tools ---------- */
+const varlist=$("#varlist");
+varlist.innerHTML=ORDER.map(v=>{const m=META[v];
+  return `<button class="varbtn ${v===S.v?'on':''}" data-v="${v}">
+    <span class="vc">${m.code}</span>
+    <span><span class="vn">${m.name}</span><span class="vp">${m.pattern}</span></span>
+  </button>`;}).join("");
+varlist.addEventListener("click",e=>{const b=e.target.closest(".varbtn");if(!b)return;
+  S.v=b.dataset.v;reset(S.v);paint();});
+$("#notesbtn").addEventListener("click",()=>{S.notes=!S.notes;paint();});
+$("#restart").addEventListener("click",()=>{reset(S.v);paint();});
+$("#dttoggle").addEventListener("click",()=>{const d=$("#devtools");
+  d.setAttribute("data-open",d.getAttribute("data-open")==="1"?"0":"1");});
+// visual-style switch — swaps skin tokens only, never touches flow/state
+document.documentElement.setAttribute("data-skin","");
+$("#skinswitch").addEventListener("click",e=>{const b=e.target.closest(".opt");if(!b)return;
+  document.documentElement.setAttribute("data-skin",b.dataset.skin);});
+// open dev panel by default so the switcher is discoverable
+$("#devtools").setAttribute("data-open","1");
+
+paint();
+})();
+</script>
+</body>
+</html>
