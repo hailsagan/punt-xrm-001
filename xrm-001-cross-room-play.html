@@ -343,6 +343,8 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .sug-add{font-family:var(--mono); font-size:11px; font-weight:600; border:1px solid var(--line-2); border-radius:100px;
   padding:4px 10px; color:var(--ink-2); flex:0 0 auto; transition:.14s}
 .sug:hover .sug-add{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.sug-add.swap{display:inline-flex; align-items:center; gap:4px}
+.sug-add.swap svg{width:10px; height:10px; stroke:currentColor; fill:none; stroke-width:2}
 .hint-cap{font-size:10.5px; color:var(--muted); margin-top:10px; padding-left:2px}
 .reduced *{animation:none !important}
 </style>
@@ -440,11 +442,11 @@ const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0}},
+  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0}},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
 function reset(v){
-  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0}};
+  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0}};
   if(v==="v2")S.v2={step:0};
 }
 
@@ -526,14 +528,24 @@ const V1={
       </div>`;
     }).join("");
     const missing=PLAY.order.filter(c=>!s.legs.includes(c));
-    const suggest=missing.length
-      ? `<div class="suggest"><div class="suggest-h">Suggested to add</div>
-          ${missing.map(c=>`<button class="sug" data-a="addleg" data-c="${c}">${ricon(c,false)}
-            <span class="sug-b"><span class="sug-t">${mkt(c).title}</span><span class="sug-s">${ROOM[c].name} · ${mkt(c).odds}</span></span>
-            <span class="sug-add">+ Add</span></button>`).join("")}</div>`
+    const addCards=missing.flatMap(c=>MARKETS[c].map((m,mi)=>
+      `<button class="sug" data-a="addleg" data-c="${c}" data-mi="${mi}">${ricon(c,false)}
+        <span class="sug-b"><span class="sug-t">${m.title}</span><span class="sug-s">${ROOM[c].name} · ${m.odds}</span></span>
+        <span class="sug-add">+ Add</span></button>`));
+    const firstLeg=s.legs[0];
+    const swapCards=[];
+    if(firstLeg&&MARKETS[firstLeg].length>1){
+      const alt=1-(s.mk[firstLeg]||0), m=MARKETS[firstLeg][alt];
+      swapCards.push(`<button class="sug" data-a="swapto" data-c="${firstLeg}" data-mi="${alt}">${ricon(firstLeg,false)}
+        <span class="sug-b"><span class="sug-t">${m.title}</span><span class="sug-s">${ROOM[firstLeg].name} · ${m.odds}</span></span>
+        <span class="sug-add swap">${IC.swap} Swap</span></button>`);
+    }
+    const cards=[...addCards,...swapCards];
+    const suggest=cards.length
+      ? `<div class="suggest"><div class="suggest-h">Suggested to add</div>${cards.join("")}</div>`
       : "";
     return appbar()+`<div class="scroll"><div class="pad anim">
-      <span class="kicker">Featured</span>
+      <span class="kicker">Featured Combo-play</span>
       <h2 class="h-lg mt8">The Pereira Run</h2>
       <div class="card mt16" style="padding:14px">
         <div class="stack gap8">${legs}</div>
@@ -614,8 +626,9 @@ const V1={
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
     else if(a==="rmleg"){ if(s.legs.length>1){ s.legs=s.legs.filter(x=>x!==ds.c); toast(ROOM[ds.c].name+" removed"); } }
-    else if(a==="addleg"){ if(!s.legs.includes(ds.c)){ s.legs=PLAY.order.filter(x=>s.legs.includes(x)||x===ds.c); toast(ROOM[ds.c].name+" added"); } }
+    else if(a==="addleg"){ if(!s.legs.includes(ds.c)){ if(ds.mi!==undefined)s.mk[ds.c]=+ds.mi; s.legs=PLAY.order.filter(x=>s.legs.includes(x)||x===ds.c); toast(ROOM[ds.c].name+" added"); } }
     else if(a==="swapleg"){ s.mk[ds.c]=(s.mk[ds.c]+1)%MARKETS[ds.c].length; toast("Swapped the "+ROOM[ds.c].name+" market"); }
+    else if(a==="swapto"){ s.mk[ds.c]=+ds.mi; toast("Swapped the "+ROOM[ds.c].name+" market"); }
   }
 };
 function IC_arrow(){return '<span class="mono muted" style="font-size:15px">›</span>';}
