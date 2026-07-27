@@ -461,11 +461,11 @@ const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0},swapping:null},
+  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
 function reset(v){
-  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0},swapping:null};
+  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null};
   if(v==="v2")S.v2={step:0};
 }
 
@@ -568,6 +568,7 @@ const V1={
     return appbar()+`<div class="scroll"><div class="pad anim">
       <span class="kicker">Featured Combo-play</span>
       <h2 class="h-lg mt8">The Pereira Run</h2>
+      <p class="txt">Hit on all 3 to collect.</p>
       <div class="card mt16" style="padding:14px">
         <div class="stack gap8">${legs}</div>
         ${suggest}
