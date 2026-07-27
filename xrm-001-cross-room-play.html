@@ -334,11 +334,16 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .icbtn:hover{border-color:var(--line-strong); color:var(--ink); background:var(--surface)}
 .icbtn:disabled{opacity:.32; cursor:not-allowed}
 .icbtn svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.8}
+.icbtn.active{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.leg.swapping{border-color:var(--ink); box-shadow:0 0 0 1px var(--ink)}
 .suggest{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line-strong)}
 .suggest-h{font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
-.suggrid{display:flex; flex-direction:column; gap:8px; margin-top:10px}
-@media (min-width:760px){ .suggrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px} }
-.sug{display:flex; align-items:center; gap:12px; width:100%; text-align:left; cursor:pointer; color:var(--ink);
+.suggrid{display:flex; gap:10px; margin-top:10px; overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; padding-bottom:4px; margin-bottom:-4px}
+.suggrid::-webkit-scrollbar{height:5px}
+.suggrid::-webkit-scrollbar-track{background:transparent}
+.suggrid::-webkit-scrollbar-thumb{background:var(--line-strong); border-radius:3px}
+.sug{display:flex; align-items:center; gap:12px; flex:0 0 258px; min-width:0; scroll-snap-align:start; text-align:left; cursor:pointer; color:var(--ink);
   background:var(--panel); border:1px dashed var(--line-2); border-radius:11px; padding:13px; transition:.14s}
 .sug:hover{border-style:solid; border-color:var(--line-strong); background:var(--surface)}
 .sug-b{flex:1 1 auto; min-width:0}
@@ -417,7 +422,7 @@ const PLAY={
   entity:"Alex Pereira",
   legs:{
     PRE:{verb:"Call it",title:"Pereira by KO / TKO",sub:"Round 2 · +600",short:"Call the fight",room:"PRE"},
-    COL:{verb:"Land it",title:"UFC 299 Pack",sub:"Shot at the Pereira rookie",short:"Rip the pack",room:"COL"},
+    COL:{verb:"Land it",title:"UFC 299 Pack",sub:"Land the Pereira rookie",short:"Rip the pack",room:"COL"},
     PLY:{verb:"Score it",title:"Fight-Night Blackjack",sub:"Clear a 21 to bank the run",short:"Run the table",room:"PLY"}
   },
   order:["PRE","COL","PLY"]
@@ -426,7 +431,7 @@ const ENTRY=20, SINGLE=140, CROSS=434; // payout story: single-room vs full cros
 const MARKETS={
   PRE:[{title:"Pereira by KO / TKO",sub:"Round 2 · +600",odds:"+600",mult:7.0},
        {title:"Pereira to win",sub:"Moneyline · +140",odds:"+140",mult:2.4}],
-  COL:[{title:"UFC 299 Pack",sub:"Shot at the Pereira rookie",odds:"×1.8",mult:1.8},
+  COL:[{title:"UFC 299 Pack",sub:"Land the Pereira rookie",odds:"×1.8",mult:1.8},
        {title:"Champions Pack",sub:"Shot at a title-holder auto",odds:"×2.2",mult:2.2}],
   PLY:[{title:"Fight-Night Blackjack",sub:"Clear a 21 to bank the run",odds:"×1.5",mult:1.5},
        {title:"Fight-Night Baccarat",sub:"Back the player hand",odds:"×1.4",mult:1.4}]
@@ -447,11 +452,11 @@ const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0}},
+  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0},swapping:null},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
 function reset(v){
-  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0}};
+  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL"],mk:{PRE:0,COL:0,PLY:0},swapping:null};
   if(v==="v2")S.v2={step:0};
 }
 
@@ -520,35 +525,37 @@ const V1={
   build(){
     const s=S.v1;
     const legs=s.legs.map((c)=>{
-      const m=mkt(c);
-      return `<div class="leg" data-s="ready">
+      const m=mkt(c), swapping=s.swapping===c;
+      return `<div class="leg ${swapping?'swapping':''}" data-s="ready">
         ${legimg()}
         <div class="body">${roomtag(c)}
           <div class="ttl">${m.title}</div>
           <div class="sub">${m.sub}</div></div>
         <div class="legctl">
-          <button class="icbtn" data-a="swapleg" data-c="${c}" title="Swap market" aria-label="Swap market">${IC.swap}</button>
+          <button class="icbtn ${swapping?'active':''}" data-a="swapleg" data-c="${c}" title="${swapping?'Cancel swap':'Swap market'}" aria-label="${swapping?'Cancel swap':'Swap market'}">${swapping?IC.check:IC.swap}</button>
           <button class="icbtn" data-a="rmleg" data-c="${c}" title="Remove leg" aria-label="Remove leg"${s.legs.length<=1?' disabled':''}>${IC.x}</button>
         </div>
       </div>`;
     }).join("");
     const missing=PLAY.order.filter(c=>!s.legs.includes(c));
-    const addCards=missing.flatMap(c=>MARKETS[c].map((m,mi)=>
-      `<button class="sug" data-a="addleg" data-c="${c}" data-mi="${mi}">${legimg()}
-        <span class="sug-b">${roomtag(c)}<span class="sug-t">${m.title}</span><span class="sug-s">${m.odds}</span>
-          <span class="sug-add">+ Add</span></span></button>`));
-    const firstLeg=s.legs[0];
-    const swapCards=[];
-    if(firstLeg&&MARKETS[firstLeg].length>1){
-      const alt=1-(s.mk[firstLeg]||0), m=MARKETS[firstLeg][alt];
-      swapCards.push(`<button class="sug" data-a="swapto" data-c="${firstLeg}" data-mi="${alt}">${legimg()}
-        <span class="sug-b">${roomtag(firstLeg)}<span class="sug-t">${m.title}</span><span class="sug-s">${m.odds}</span>
-          <span class="sug-add swap">${IC.swap} Swap</span></span></button>`);
+    let suggest;
+    if(s.swapping&&s.legs.includes(s.swapping)){
+      const c=s.swapping;
+      const alts=MARKETS[c].map((m,mi)=>({m,mi})).filter(({mi})=>mi!==(s.mk[c]||0));
+      const swapCards=alts.map(({m,mi})=>
+        `<button class="sug" data-a="useswap" data-c="${c}" data-mi="${mi}">${legimg()}
+          <span class="sug-b">${roomtag(c)}<span class="sug-t">${m.title}</span><span class="sug-s">${m.odds}</span>
+            <span class="sug-add swap">${IC.check} Use</span></span></button>`);
+      suggest=`<div class="suggest"><div class="suggest-h">Swap the ${ROOM[c].name} market</div><div class="suggrid">${swapCards.join("")}</div></div>`;
+    }else{
+      const addCards=missing.flatMap(c=>MARKETS[c].map((m,mi)=>
+        `<button class="sug" data-a="addleg" data-c="${c}" data-mi="${mi}">${legimg()}
+          <span class="sug-b">${roomtag(c)}<span class="sug-t">${m.title}</span><span class="sug-s">${m.odds}</span>
+            <span class="sug-add">+ Add</span></span></button>`));
+      suggest=addCards.length
+        ? `<div class="suggest"><div class="suggest-h">Suggested to add</div><div class="suggrid">${addCards.join("")}</div></div>`
+        : "";
     }
-    const cards=[...addCards,...swapCards];
-    const suggest=cards.length
-      ? `<div class="suggest"><div class="suggest-h">Suggested to add</div><div class="suggrid">${cards.join("")}</div></div>`
-      : "";
     return appbar()+`<div class="scroll"><div class="pad anim">
       <span class="kicker">Featured Combo-play</span>
       <h2 class="h-lg mt8">The Pereira Run</h2>
@@ -571,7 +578,7 @@ const V1={
           <div class="payline mt12"><span class="big">$${toWin(s.stake,s.legs)}</span></div>
         </div>
       </div>
-      <button class="btn mt16" data-a="place">Place combo · $${s.stake}</button>
+      <button class="btn mt16" data-a="place">Place Combo-Play Bet · $${s.stake}</button>
     </div></div>`;
   },
   active(){
@@ -630,10 +637,10 @@ const V1={
     else if(a==="leg"){s.active=ds.c;}
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
-    else if(a==="rmleg"){ if(s.legs.length>1){ s.legs=s.legs.filter(x=>x!==ds.c); toast(ROOM[ds.c].name+" removed"); } }
+    else if(a==="rmleg"){ if(s.legs.length>1){ if(s.swapping===ds.c)s.swapping=null; s.legs=s.legs.filter(x=>x!==ds.c); toast(ROOM[ds.c].name+" removed"); } }
     else if(a==="addleg"){ if(!s.legs.includes(ds.c)){ if(ds.mi!==undefined)s.mk[ds.c]=+ds.mi; s.legs=PLAY.order.filter(x=>s.legs.includes(x)||x===ds.c); toast(ROOM[ds.c].name+" added"); } }
-    else if(a==="swapleg"){ s.mk[ds.c]=(s.mk[ds.c]+1)%MARKETS[ds.c].length; toast("Swapped the "+ROOM[ds.c].name+" market"); }
-    else if(a==="swapto"){ s.mk[ds.c]=+ds.mi; toast("Swapped the "+ROOM[ds.c].name+" market"); }
+    else if(a==="swapleg"){ s.swapping=(s.swapping===ds.c?null:ds.c); }
+    else if(a==="useswap"){ s.mk[ds.c]=+ds.mi; s.swapping=null; toast("Swapped the "+ROOM[ds.c].name+" market"); }
   }
 };
 function IC_arrow(){return '<span class="mono muted" style="font-size:15px">›</span>';}
