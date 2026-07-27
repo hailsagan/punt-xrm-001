@@ -171,6 +171,9 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .stepper .val{flex:1; text-align:center; font-family:var(--mono); font-size:18px; font-weight:600; font-variant-numeric:tabular-nums}
 .stepper.sm button{width:34px; height:34px; font-size:16px}
 .stepper.sm .val{flex:0 0 auto; min-width:52px; font-size:15px; padding:0 6px}
+.stakesplit{display:flex; align-items:stretch; gap:20px}
+.stakecol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:center}
+.stakediv{width:1px; background:var(--line); flex:0 0 auto}
 
 /* pill / badge */
 .badge{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
@@ -535,18 +538,19 @@ const V1={
         <div class="stack gap8">${legs}</div>
         ${suggest}
       </div>
-      <div class="card mt16">
-        <div class="row between">
+      <div class="card mt16 stakesplit">
+        <div class="stakecol">
           <span class="kicker" style="margin:0">Your stake</span>
-          <div class="stepper sm">
+          <div class="stepper sm mt12">
             <button data-a="stake" data-d="-5">–</button>
             <span class="val">$${s.stake}</span>
             <button data-a="stake" data-d="5">+</button>
           </div>
         </div>
-        <div class="mt16">
+        <div class="stakediv"></div>
+        <div class="stakecol">
           <div class="mono muted" style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase">To win · ${s.legs.length} ${s.legs.length===1?'room':'rooms'}</div>
-          <div class="payline mt4"><span class="big">$${toWin(s.stake,s.legs)}</span></div>
+          <div class="payline mt12"><span class="big">$${toWin(s.stake,s.legs)}</span></div>
         </div>
       </div>
       <button class="btn mt16" data-a="place">Place combo · $${s.stake}</button>
