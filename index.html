@@ -328,6 +328,25 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .chkbtn.on .box{background:var(--on-fill); border-color:var(--on-fill)}
 .dt-foot{display:flex; gap:8px; margin-top:12px}
 .dt-foot .btn.sm{flex:1; width:auto}
+/* V1 combo builder — leg controls + suggestions */
+.legctl{display:flex; gap:5px; flex:0 0 auto}
+.icbtn{width:27px; height:27px; border:1px solid var(--line-2); border-radius:7px; background:var(--panel);
+  color:var(--muted); cursor:pointer; display:grid; place-items:center; transition:.14s; padding:0}
+.icbtn:hover{border-color:var(--line-strong); color:var(--ink); background:var(--surface)}
+.icbtn:disabled{opacity:.32; cursor:not-allowed}
+.icbtn svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.8}
+.suggest{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line-strong)}
+.suggest-h{font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.sug{display:flex; align-items:center; gap:10px; width:100%; text-align:left; cursor:pointer; color:var(--ink);
+  background:var(--panel); border:1px dashed var(--line-2); border-radius:10px; padding:9px 11px; margin-top:8px; transition:.14s}
+.sug:hover{border-style:solid; border-color:var(--line-strong); background:var(--surface)}
+.sug-b{flex:1 1 auto; min-width:0; display:flex; flex-direction:column}
+.sug-t{font-size:13px; font-weight:560; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.sug-s{font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:1px}
+.sug-add{font-family:var(--mono); font-size:11px; font-weight:600; border:1px solid var(--line-2); border-radius:100px;
+  padding:4px 10px; color:var(--ink-2); flex:0 0 auto; transition:.14s}
+.sug:hover .sug-add{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.hint-cap{font-size:10.5px; color:var(--muted); margin-top:10px; padding-left:2px}
 .reduced *{animation:none !important}
 </style>
 
@@ -341,7 +360,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 <div class="devtools" id="devtools" data-open="0">
   <div class="dt-panel">
     <h4>XRM-001 · Concept switcher</h4>
-    <p class="desc">One structured play — <b>Call it · Land it · Score it</b> — spanning Predict, Collect &amp; Play. Three ways to make the cross-room move feel deliberate.</p>
+    <p class="desc">One structured play — <b>Call it · Land it · Score it</b> — spanning Predict, Collect &amp; Play. Two ways to make the cross-room move feel deliberate.</p>
     <div class="dt-sec">Variation</div>
     <div class="varlist" id="varlist"></div>
     <div class="dt-foot">
@@ -380,7 +399,9 @@ const IC={
   COL:'<svg viewBox="0 0 24 24"><rect x="6.5" y="4" width="13" height="17" rx="2.2"/><path d="M4.2 7.2 3 8a2 2 0 0 0-.6 2.5l3.4 9.2"/></svg>',
   check:'<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>',
   lock:'<svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>',
-  cross:'<svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg>'
+  cross:'<svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg>',
+  swap:'<svg viewBox="0 0 24 24"><path d="M16 4l3 3-3 3M19 7H8M8 20l-3-3 3-3M5 17h11"/></svg>',
+  x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>'
 };
 const ROOM={PRE:{name:"Predict",verb:"Call it"},COL:{name:"Collect",verb:"Land it"},PLY:{name:"Play",verb:"Score it"}};
 function ricon(code,solid){return `<span class="ricon ${solid?'solid':''}">${IC[code]}</span>`}
@@ -398,6 +419,14 @@ const PLAY={
   order:["PRE","COL","PLY"]
 };
 const ENTRY=20, SINGLE=140, CROSS=434; // payout story: single-room vs full cross-room
+const MARKETS={
+  PRE:[{title:"Pereira by KO / TKO",sub:"Round 2 · +600",odds:"+600",mult:7.0},
+       {title:"Pereira to win",sub:"Moneyline · +140",odds:"+140",mult:2.4}],
+  COL:[{title:"UFC 299 Pack",sub:"Shot at the Pereira rookie",odds:"×1.8",mult:1.8},
+       {title:"Champions Pack",sub:"Shot at a title-holder auto",odds:"×2.2",mult:2.2}],
+  PLY:[{title:"Fight-Night Blackjack",sub:"Clear a 21 to bank the run",odds:"×1.5",mult:1.5},
+       {title:"Fight-Night Baccarat",sub:"Back the player hand",odds:"×1.4",mult:1.4}]
+};
 
 /* ---------- variation meta ---------- */
 const META={
@@ -408,25 +437,24 @@ const META={
   v2:{code:"V2",name:"The Run",pattern:"Causal chain (gated)",
       note:"Each room's result fuels the next. The call funds the pack; the pull becomes a table token. Leg 2 stays locked until leg 1 lands.",
       move:"Movement is the only way forward and every move is powered by the last — unmistakably one continuous play.",
-      risk:"Gating can read as a forced funnel if a losing leg dead-ends the run; needs a graceful fail path."},
-  v3:{code:"V3",name:"The Carry",pattern:"Persistent play object",
-      note:"The play is a floating puck that travels as global chrome. You act inline via a sheet and never leave your context; the puck advances to the next room.",
-      move:"Continuity is maximal — the play is a thing you carry, not a set of pages you navigate between.",
-      risk:"Inline sheets can hide that a real room switch happened; the 'where am I' cue must stay legible."}
+      risk:"Gating can read as a forced funnel if a losing leg dead-ends the run; needs a graceful fail path."}
 };
-const ORDER=["v1","v2","v3"];
+const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false},
+  v1:{stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0}},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
-  v3:{n:0,open:false} // The Carry: n legs done 0..3, sheet open
 };
 function reset(v){
-  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false};
+  if(v==="v1")S.v1={stage:"build",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0}};
   if(v==="v2")S.v2={step:0};
-  if(v==="v3")S.v3={n:0,open:false};
 }
+
+/* ---------- V1 combo helpers ---------- */
+function mkt(c){return MARKETS[c][(S.v1.mk&&S.v1.mk[c])||0];}
+function comboMult(legs){return legs.reduce((m,c)=>m*mkt(c).mult,1);}
+function toWin(stake,legs){return Math.round(stake*comboMult(legs)*(legs.length>=3?1.15:1));}
 
 /* ---------- shared components ---------- */
 function meter(count,bonus){
@@ -459,13 +487,14 @@ function payoutBlock(){
     <div class="stat hero"><div class="k">Cross-room bonus</div><div class="v">+15%</div></div>
   </div>`;
 }
-function completeScreen(headline){
+function completeScreen(headline,legs){
+  legs=legs||PLAY.order;
   return `<div class="pad anim">
     <div class="row between"><span class="kicker">Play complete</span><span class="badge solid">XRM ✓</span></div>
     <h2 class="h-lg mt8">${headline}</h2>
-    ${meter(3,true)}
-    <div class="row gap8 mt16 wrap">${rtag("PRE",1)}${rtag("COL",1)}${rtag("PLY",1)}
-      <span class="badge">3 / 3 rooms</span></div>
+    ${meter(legs.length,legs.length>=3)}
+    <div class="row gap8 mt16 wrap">${legs.map(c=>rtag(c,1)).join("")}
+      <span class="badge">${legs.length} / ${legs.length} rooms</span></div>
     <div class="mt20 payline"><span class="big">$${CROSS}</span><span class="was">$${SINGLE}</span>
       <span class="badge">banked</span></div>
     ${payoutBlock()}
@@ -486,19 +515,41 @@ const V1={
   },
   build(){
     const s=S.v1;
-    const legs=PLAY.order.map((c,i)=>legRow(c,i+1,i+1)).join("");
+    const legs=s.legs.map((c)=>{
+      const m=mkt(c);
+      return `<div class="leg" data-s="ready">
+        ${ricon(c,false)}
+        <div class="body"><div class="verb">${ROOM[c].verb} · ${ROOM[c].name}</div>
+          <div class="ttl">${m.title}</div>
+          <div class="sub">${m.sub}</div></div>
+        <div class="legctl">
+          <button class="icbtn" data-a="swapleg" data-c="${c}" title="Swap market" aria-label="Swap market">${IC.swap}</button>
+          <button class="icbtn" data-a="rmleg" data-c="${c}" title="Remove leg" aria-label="Remove leg"${s.legs.length<=1?' disabled':''}>${IC.x}</button>
+        </div>
+      </div>`;
+    }).join("");
+    const missing=PLAY.order.filter(c=>!s.legs.includes(c));
+    const suggest=missing.length
+      ? `<div class="suggest"><div class="suggest-h">Suggested to add</div>
+          ${missing.map(c=>`<button class="sug" data-a="addleg" data-c="${c}">${ricon(c,false)}
+            <span class="sug-b"><span class="sug-t">${mkt(c).title}</span><span class="sug-s">${ROOM[c].name} · ${mkt(c).odds}</span></span>
+            <span class="sug-add">+ Add</span></button>`).join("")}</div>`
+      : `<div class="suggest"><div class="suggest-h">All three rooms in play · swap or drop a leg to customize</div></div>`;
+    const cm=comboMult(s.legs);
     return appbar()+`<div class="scroll"><div class="pad anim">
       <span class="kicker">Featured · cross-room combo</span>
       <h2 class="h-lg mt8">The Pereira Run</h2>
-      <p class="txt">One ticket. Three rooms. ${PLAY.event} — ${PLAY.when}.</p>
+      <p class="txt">One ticket, your legs. ${PLAY.event} — ${PLAY.when}.</p>
       <div class="card mt16" style="padding:14px">
         <div class="row between"><span class="rtag solid">${IC.cross}XRM COMBO</span>
-          <span class="mono muted" style="font-size:12px">×18.9 combined</span></div>
+          <span class="mono muted" style="font-size:12px">×${cm.toFixed(1)} combined</span></div>
         <div class="stack gap8 mt12">${legs}</div>
-        <div class="mt12">${meter(0,false)}</div>
+        ${suggest}
+        <div class="mt12">${meter(s.legs.length,s.legs.length>=3)}</div>
         <div class="row between mt12" style="font-family:var(--mono);font-size:11px;color:var(--muted)">
-          <span>Cross-room bonus</span><span>+15% at 3 / 3</span></div>
+          <span>Cross-room bonus</span><span>+15% at 3 / 3 rooms</span></div>
       </div>
+      <div class="hint-cap mono">Your combo, your call — swap a market, drop a leg, or add another room.</div>
       <div class="card mt16">
         <div class="row between"><span class="kicker" style="margin:0">Your stake</span>
           <span class="mono muted" style="font-size:12px">one entry, all legs</span></div>
@@ -510,23 +561,20 @@ const V1={
           </div>
         </div>
         <div class="row between mt12 mono" style="font-size:12.5px">
-          <span class="muted">To win (all rooms)</span><span style="font-weight:640">$${Math.round(s.stake*CROSS/ENTRY)}</span></div>
+          <span class="muted">To win (${s.legs.length} ${s.legs.length===1?'room':'rooms'})</span><span style="font-weight:640">$${toWin(s.stake,s.legs)}</span></div>
       </div>
       <button class="btn mt16" data-a="place">Place combo · $${s.stake}</button>
     </div></div>`;
   },
   active(){
-    const s=S.v1, cnt=PLAY.order.filter(c=>s.done[c]).length, all=cnt===3;
-    if(all)return completeScreen("You called it, landed it, and scored it.");
-    // rail: persistent slip
-    const legs=PLAY.order.map((c,i)=>{
-      const done=s.done[c]; const cur=s.active===c;
-      const st=done?"done":cur?"ready":(i+1);
-      const state=done?"done":cur?"ready":"ready";
-      return `<button class="leg" data-s="${done?'done':cur?'ready':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${cur?'var(--surface)':'var(--panel)'}">
+    const s=S.v1, cnt=s.legs.filter(c=>s.done[c]).length, all=cnt===s.legs.length;
+    if(all)return completeScreen("You called it, landed it, and scored it.",s.legs);
+    const legs=s.legs.map((c)=>{
+      const done=s.done[c]; const cur=s.active===c; const m=mkt(c);
+      return `<button class="leg" data-s="${cur?'ready':done?'done':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${cur?'var(--surface)':'var(--panel)'}">
         ${ricon(c,done)}
-        <div class="body"><div class="verb">${PLAY.legs[c].verb} · ${ROOM[c].name}</div>
-        <div class="ttl">${PLAY.legs[c].title}</div>
+        <div class="body"><div class="verb">${ROOM[c].verb} · ${ROOM[c].name}</div>
+        <div class="ttl">${m.title}</div>
         <div class="sub">${done?'Resolved':cur?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
         <div class="st">${done?tick("done"):IC_arrow()}</div></button>`;
     }).join("");
@@ -534,36 +582,35 @@ const V1={
       <div class="row between"><span class="rtag solid">${IC.cross}XRM SLIP</span>
         <span class="badge live">LIVE</span></div>
       <h3 class="h-md mt12">The Pereira Run</h3>
-      <div class="mono muted" style="font-size:11.5px;margin-top:3px">Stake $${s.stake} · to win $${Math.round(s.stake*CROSS/ENTRY)}</div>
-      ${meter(cnt,false)}
+      <div class="mono muted" style="font-size:11.5px;margin-top:3px">Stake $${s.stake} · to win $${toWin(s.stake,s.legs)}</div>
+      ${meter(cnt,all&&s.legs.length>=3)}
       <div class="stack gap8 mt16">${legs}</div>
-      <div class="mono muted mt12" style="font-size:11px">${cnt}/3 rooms resolved</div>
+      <div class="mono muted mt12" style="font-size:11px">${cnt}/${s.legs.length} rooms resolved</div>
     </div>`;
-    // main: current room resolve, or prompt
     let main;
     if(s.active){ main=this.roomPanel(s.active); }
     else{
       main=`<div class="main"><span class="kicker">Combo live</span>
-        <h2 class="h-lg mt8">Three rooms to play.</h2>
+        <h2 class="h-lg mt8">${s.legs.length===1?'One room to play.':s.legs.length+' rooms to play.'}</h2>
         <p class="txt">Tap a leg to play it. Your slip travels with you.</p></div>`;
     }
     return appbar(s.active)+`<div class="scroll"><div class="layout">${rail}${main}</div></div>`;
   },
   roomPanel(c){
-    const l=PLAY.legs[c];
+    const s=S.v1, m=mkt(c);
     const body={
-      PRE:`<p class="txt">Lock your call on the main event. This is leg 1 of your combo.</p>
-        <div class="card flat mt16"><div class="row between"><span>${l.title}</span><span class="mono" style="font-weight:640">+600</span></div>
+      PRE:`<p class="txt">Lock your call on the main event. This is one leg of your combo.</p>
+        <div class="card flat mt16"><div class="row between"><span>${m.title}</span><span class="mono" style="font-weight:640">${m.odds}</span></div>
         <div class="hatch r-media mt12"><span class="lbl">Fight card · Pereira vs. Hill</span></div></div>`,
-      COL:`<p class="txt">Rip your UFC 299 pack. A hit on the Pereira rookie boosts the same ticket.</p>
+      COL:`<p class="txt">Rip your pack. A hit boosts the same ticket.</p>
         <div class="row gap10 mt16">${[0,1,2].map(i=>`<div class="hatch r-card" style="flex:1"><span class="lbl">Card ${i+1}</span></div>`).join("")}</div>`,
-      PLY:`<p class="txt">Take the run to the Fight-Night table. Clear a 21 to bank the whole combo.</p>
-        <div class="hatch r-media mt16"><span class="lbl">Blackjack · seat open</span></div>`
+      PLY:`<p class="txt">Take the run to the table. Clear it to bank the whole combo.</p>
+        <div class="hatch r-media mt16"><span class="lbl">${m.title} · seat open</span></div>`
     };
     return `<div class="main anim">
       <button class="btn ghost sm" data-a="back" style="margin-bottom:14px">← Back to slip</button>
-      <div class="row gap8">${rtag(c,1)}<span class="badge">Leg ${PLAY.order.indexOf(c)+1} of 3</span></div>
-      <h2 class="h-lg mt12">${l.verb}: ${l.title}</h2>
+      <div class="row gap8">${rtag(c,1)}<span class="badge">Leg ${s.legs.indexOf(c)+1} of ${s.legs.length}</span></div>
+      <h2 class="h-lg mt12">${ROOM[c].verb}: ${m.title}</h2>
       ${body[c]}
       <button class="btn mt20" data-a="resolve" data-c="${c}">Resolve ${ROOM[c].name} leg →</button>
     </div>`;
@@ -575,6 +622,9 @@ const V1={
     else if(a==="leg"){s.active=ds.c;}
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
+    else if(a==="rmleg"){ if(s.legs.length>1){ s.legs=s.legs.filter(x=>x!==ds.c); toast(ROOM[ds.c].name+" removed"); } }
+    else if(a==="addleg"){ if(!s.legs.includes(ds.c)){ s.legs=PLAY.order.filter(x=>s.legs.includes(x)||x===ds.c); toast(ROOM[ds.c].name+" added"); } }
+    else if(a==="swapleg"){ s.mk[ds.c]=(s.mk[ds.c]+1)%MARKETS[ds.c].length; toast("Swapped the "+ROOM[ds.c].name+" market"); }
   }
 };
 function IC_arrow(){return '<span class="mono muted" style="font-size:15px">›</span>';}
@@ -662,47 +712,7 @@ const V2={
   on(a){const s=S.v2; if(a==="next"){s.step++; if(s.step===1)toast("Call hit · +$"+SINGLE); if(s.step===3)toast("Pulled: Pereira rookie"); if(s.step===5)toast("Cross-room bonus unlocked");}}
 };
 
-/* ============================================================ V3 · THE CARRY */
-const V3={
-  view(){
-    const s=S.v3;
-    if(s.n>=3)return completeScreen("You carried one play across all three rooms.");
-    const cur=PLAY.order[s.n];
-    const l=PLAY.legs[cur];
-    const legdots=PLAY.order.map((c,i)=>`<i class="${i<s.n?'on':i===s.n?'now':''}"></i>`).join("");
-    // room backdrop shows you HAVE moved rooms while puck persists
-    const bg=`<div class="roombg">
-      <div class="big-icon">${IC[cur]}</div>
-    </div>`;
-    let puck;
-    if(s.open){
-      puck=`<div class="puck sheet"><div class="sheetgrip"></div>
-        <div class="row gap8">${rtag(cur,1)}<span class="badge">Leg ${s.n+1} of 3 · same play</span></div>
-        <div class="h-md mt12">${l.verb}: ${l.title}</div>
-        <div class="mono muted" style="font-size:12px;margin-top:3px">${l.sub}</div>
-        <div class="hatch r-media mt12" style="max-height:132px"><span class="lbl">${ROOM[cur].name} · inline action</span></div>
-        <button class="btn mt12" data-a="do">Confirm ${ROOM[cur].name} — stay in the play</button>
-        <button class="btn ghost sm mt8" data-a="close" style="width:100%">Not yet</button></div>`;
-    }else{
-      puck=`<div class="puck" data-a="open">
-        <div class="row between"><span class="rtag solid">${IC.cross}THE PLAY</span>
-          <span class="mono muted" style="font-size:11px">${s.n}/3 · carrying</span></div>
-        <div class="row between mt12" style="align-items:center">
-          <div><div class="mono muted" style="font-size:10px;letter-spacing:.1em">NEXT</div>
-            <div style="font-weight:600;font-size:14.5px;margin-top:2px">${l.verb} in ${ROOM[cur].name}</div></div>
-          <span class="btn sm" style="pointer-events:none">Tap →</span></div>
-        <div class="puck-legs">${legdots}</div></div>`;
-    }
-    return appbar(cur)+`<div class="roomstage">${bg}${puck}</div>`;
-  },
-  on(a){const s=S.v3;
-    if(a==="open")s.open=true;
-    else if(a==="close")s.open=false;
-    else if(a==="do"){s.n++;s.open=false; toast(ROOM[PLAY.order[s.n-1]].name+" done · play advances"); if(s.n>=3)toast("Cross-room bonus unlocked");}
-  }
-};
-
-const V={v1:V1,v2:V2,v3:V3};
+const V={v1:V1,v2:V2};
 
 /* ---------- toast ---------- */
 let toastT;
