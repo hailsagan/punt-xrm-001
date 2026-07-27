@@ -169,6 +169,8 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
   font-size:19px; cursor:pointer; font-family:var(--mono)}
 .stepper button:hover{background:var(--surface)}
 .stepper .val{flex:1; text-align:center; font-family:var(--mono); font-size:18px; font-weight:600; font-variant-numeric:tabular-nums}
+.stepper.sm button{width:34px; height:34px; font-size:16px}
+.stepper.sm .val{flex:0 0 auto; min-width:52px; font-size:15px; padding:0 6px}
 
 /* pill / badge */
 .badge{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
@@ -525,34 +527,30 @@ const V1={
           ${missing.map(c=>`<button class="sug" data-a="addleg" data-c="${c}">${ricon(c,false)}
             <span class="sug-b"><span class="sug-t">${mkt(c).title}</span><span class="sug-s">${ROOM[c].name} · ${mkt(c).odds}</span></span>
             <span class="sug-add">+ Add</span></button>`).join("")}</div>`
-      : `<div class="suggest"><div class="suggest-h">All three rooms in play · swap or drop a leg to customize</div></div>`;
-    const cm=comboMult(s.legs);
+      : "";
     return appbar()+`<div class="scroll"><div class="pad anim">
-      <span class="kicker">Featured · cross-room combo</span>
+      <span class="kicker">Featured</span>
       <h2 class="h-lg mt8">The Pereira Run</h2>
-      <p class="txt">One ticket, your legs. ${PLAY.event} — ${PLAY.when}.</p>
       <div class="card mt16" style="padding:14px">
-        <div class="row between"><span class="rtag solid">${IC.cross}XRM COMBO</span>
-          <span class="mono muted" style="font-size:12px">×${cm.toFixed(1)} combined</span></div>
-        <div class="stack gap8 mt12">${legs}</div>
+        <div class="stack gap8">${legs}</div>
         ${suggest}
         <div class="mt12">${meter(s.legs.length,s.legs.length>=3)}</div>
         <div class="row between mt12" style="font-family:var(--mono);font-size:11px;color:var(--muted)">
           <span>Cross-room bonus</span><span>+15% at 3 / 3 rooms</span></div>
       </div>
-      <div class="hint-cap mono">Your combo, your call — swap a market, drop a leg, or add another room.</div>
       <div class="card mt16">
-        <div class="row between"><span class="kicker" style="margin:0">Your stake</span>
-          <span class="mono muted" style="font-size:12px">one entry, all legs</span></div>
-        <div class="row gap12 mt12">
-          <div class="stepper grow">
+        <div class="row between">
+          <span class="kicker" style="margin:0">Your stake</span>
+          <div class="stepper sm">
             <button data-a="stake" data-d="-5">–</button>
             <span class="val">$${s.stake}</span>
             <button data-a="stake" data-d="5">+</button>
           </div>
         </div>
-        <div class="row between mt12 mono" style="font-size:12.5px">
-          <span class="muted">To win (${s.legs.length} ${s.legs.length===1?'room':'rooms'})</span><span style="font-weight:640">$${toWin(s.stake,s.legs)}</span></div>
+        <div class="mt16">
+          <div class="mono muted" style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase">To win · ${s.legs.length} ${s.legs.length===1?'room':'rooms'}</div>
+          <div class="payline mt4"><span class="big">$${toWin(s.stake,s.legs)}</span></div>
+        </div>
       </div>
       <button class="btn mt16" data-a="place">Place combo · $${s.stake}</button>
     </div></div>`;
