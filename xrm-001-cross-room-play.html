@@ -114,6 +114,9 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .ricon.solid{background:var(--fill); border-color:var(--fill)}
 .ricon.solid svg{stroke:var(--on-fill)}
 
+/* leg-card image placeholder: square, left-aligned, 8px inset from card edges */
+.legimg{flex:0 0 auto; align-self:stretch; margin:-6px 0 -6px -6px; border-radius:var(--r-sm)}
+
 /* hatch placeholder */
 .hatch{background-image:repeating-linear-gradient(45deg,var(--hatch) 0 1px,transparent 1px 7px);
   border:1px solid var(--line); border-radius:var(--r-sm); position:relative}
@@ -333,16 +336,17 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .icbtn svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.8}
 .suggest{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line-strong)}
 .suggest-h{font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
-.sug{display:flex; align-items:center; gap:10px; width:100%; text-align:left; cursor:pointer; color:var(--ink);
-  background:var(--panel); border:1px dashed var(--line-2); border-radius:10px; padding:9px 11px; margin-top:8px; transition:.14s}
+.suggrid{display:flex; flex-direction:column; gap:8px; margin-top:10px}
+@media (min-width:760px){ .suggrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px} }
+.sug{display:flex; align-items:center; gap:12px; width:100%; text-align:left; cursor:pointer; color:var(--ink);
+  background:var(--panel); border:1px dashed var(--line-2); border-radius:11px; padding:13px; transition:.14s}
 .sug:hover{border-style:solid; border-color:var(--line-strong); background:var(--surface)}
-.sug-b{flex:1 1 auto; min-width:0; display:flex; flex-direction:column}
-.sug-t{font-size:13px; font-weight:560; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.sug-s{font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:1px}
-.sug-add{font-family:var(--mono); font-size:11px; font-weight:600; border:1px solid var(--line-2); border-radius:100px;
-  padding:4px 10px; color:var(--ink-2); flex:0 0 auto; transition:.14s}
+.sug-b{flex:1 1 auto; min-width:0}
+.sug-t{display:block; font-size:13px; font-weight:560; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.sug-s{display:block; font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:1px}
+.sug-add{display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:11px; font-weight:600;
+  border:1px solid var(--line-2); border-radius:100px; padding:4px 10px; color:var(--ink-2); margin-top:8px; transition:.14s}
 .sug:hover .sug-add{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
-.sug-add.swap{display:inline-flex; align-items:center; gap:4px}
 .sug-add.swap svg{width:10px; height:10px; stroke:currentColor; fill:none; stroke-width:2}
 .hint-cap{font-size:10.5px; color:var(--muted); margin-top:10px; padding-left:2px}
 .reduced *{animation:none !important}
@@ -403,6 +407,7 @@ const IC={
 };
 const ROOM={PRE:{name:"Predict",verb:"Call it"},COL:{name:"Collect",verb:"Land it"},PLY:{name:"Play",verb:"Score it"}};
 function ricon(code,solid){return `<span class="ricon ${solid?'solid':''}">${IC[code]}</span>`}
+function legimg(){return `<div class="legimg hatch"></div>`}
 function rtag(code,solid){return `<span class="rtag ${solid?'solid':''}">${IC[code]}${ROOM[code].name}</span>`}
 function roomtag(code){return `<span class="rtag">${ROOM[code].name}</span>`}
 
@@ -471,7 +476,7 @@ function legRow(code,state,idx){
   const st=state==="done"?"done":state==="locked"?"locked":"ready";
   const mark=state==="done"?tick("done"):state==="locked"?tick("locked"):tick(idx);
   return `<div class="leg" data-s="${st}">
-    ${ricon(code,state==="done")}
+    ${legimg()}
     <div class="body">
       ${roomtag(code)}
       <div class="ttl">${l.title}</div>
@@ -517,7 +522,7 @@ const V1={
     const legs=s.legs.map((c)=>{
       const m=mkt(c);
       return `<div class="leg" data-s="ready">
-        ${ricon(c,false)}
+        ${legimg()}
         <div class="body">${roomtag(c)}
           <div class="ttl">${m.title}</div>
           <div class="sub">${m.sub}</div></div>
@@ -529,20 +534,20 @@ const V1={
     }).join("");
     const missing=PLAY.order.filter(c=>!s.legs.includes(c));
     const addCards=missing.flatMap(c=>MARKETS[c].map((m,mi)=>
-      `<button class="sug" data-a="addleg" data-c="${c}" data-mi="${mi}">${ricon(c,false)}
-        <span class="sug-b"><span class="sug-t">${m.title}</span><span class="sug-s">${ROOM[c].name} · ${m.odds}</span></span>
-        <span class="sug-add">+ Add</span></button>`));
+      `<button class="sug" data-a="addleg" data-c="${c}" data-mi="${mi}">${legimg()}
+        <span class="sug-b">${roomtag(c)}<span class="sug-t">${m.title}</span><span class="sug-s">${m.odds}</span>
+          <span class="sug-add">+ Add</span></span></button>`));
     const firstLeg=s.legs[0];
     const swapCards=[];
     if(firstLeg&&MARKETS[firstLeg].length>1){
       const alt=1-(s.mk[firstLeg]||0), m=MARKETS[firstLeg][alt];
-      swapCards.push(`<button class="sug" data-a="swapto" data-c="${firstLeg}" data-mi="${alt}">${ricon(firstLeg,false)}
-        <span class="sug-b"><span class="sug-t">${m.title}</span><span class="sug-s">${ROOM[firstLeg].name} · ${m.odds}</span></span>
-        <span class="sug-add swap">${IC.swap} Swap</span></button>`);
+      swapCards.push(`<button class="sug" data-a="swapto" data-c="${firstLeg}" data-mi="${alt}">${legimg()}
+        <span class="sug-b">${roomtag(firstLeg)}<span class="sug-t">${m.title}</span><span class="sug-s">${m.odds}</span>
+          <span class="sug-add swap">${IC.swap} Swap</span></span></button>`);
     }
     const cards=[...addCards,...swapCards];
     const suggest=cards.length
-      ? `<div class="suggest"><div class="suggest-h">Suggested to add</div>${cards.join("")}</div>`
+      ? `<div class="suggest"><div class="suggest-h">Suggested to add</div><div class="suggrid">${cards.join("")}</div></div>`
       : "";
     return appbar()+`<div class="scroll"><div class="pad anim">
       <span class="kicker">Featured Combo-play</span>
@@ -575,7 +580,7 @@ const V1={
     const legs=s.legs.map((c)=>{
       const done=s.done[c]; const cur=s.active===c; const m=mkt(c);
       return `<button class="leg" data-s="${cur?'ready':done?'done':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${cur?'var(--surface)':'var(--panel)'}">
-        ${ricon(c,done)}
+        ${legimg()}
         <div class="body">${roomtag(c)}
         <div class="ttl">${m.title}</div>
         <div class="sub">${done?'Resolved':cur?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
@@ -646,7 +651,7 @@ const V2={
     return PLAY.order.map((c,i)=>{
       const st=stt(c);
       return `<div class="leg" data-s="${st==='now'?'ready':st==='done'?'done':'locked'}">
-        ${ricon(c,st==="done")}
+        ${legimg()}
         <div class="body">${roomtag(c)}
         <div class="ttl">${PLAY.legs[c].short}</div>
         <div class="sub">${st==="locked"?"Unlocks from step "+i:st==="done"?"Cleared":"Now"}</div></div>
@@ -742,6 +747,7 @@ function paint(){
   $("#notesbtn").classList.toggle("on",S.notes);
   xrm.setAttribute("data-notes",S.notes?"on":"off");
   $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
+  document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
 }
 
 /* ---------- events ---------- */
@@ -772,6 +778,11 @@ $("#skinswitch").addEventListener("click",e=>{const b=e.target.closest(".opt");i
   document.documentElement.setAttribute("data-skin",b.dataset.skin);});
 // open dev panel by default so the switcher is discoverable
 $("#devtools").setAttribute("data-open","1");
+
+let resizeT;
+window.addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{
+  document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
+},120);});
 
 paint();
 })();
