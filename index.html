@@ -148,8 +148,11 @@
   .layout .main{padding:32px 40px 96px; min-width:0}
   .layout .rail.plain{background:var(--panel)}
 }
-/* stake / to-win pinned to the bottom of the rail, win amount emphasized */
-.railfoot{margin-top:auto; padding-top:18px; border-top:1px solid var(--line)}
+/* V1 rail: three groups on an even 24px rhythm */
+.rail-v1{gap:24px}
+.rail-mid{display:flex; flex-direction:column}
+/* stake / to-win, win amount emphasized */
+.railfoot{padding-top:18px; border-top:1px solid var(--line)}
 .railfoot .rf-row{display:flex; align-items:baseline; justify-content:space-between;
   font-family:var(--mono); font-size:11.5px; color:var(--muted)}
 .railfoot .rf-row .v{color:var(--ink-2); font-variant-numeric:tabular-nums}
@@ -201,6 +204,20 @@
 .ripcard .rc-face{position:absolute; inset:0; backface-visibility:hidden;
   -webkit-backface-visibility:hidden; border-radius:var(--r-sm)}
 .ripcard .rc-back{transform:rotateY(180deg); background-color:var(--surface-2)}
+/* Play hand — table dims with a progress message while the hand runs */
+.handstage{position:relative}
+.hand-overlay{position:absolute; inset:0; display:grid; place-items:center;
+  border-radius:var(--r-sm); background:rgba(0,0,0,.58);
+  opacity:0; pointer-events:none; transition:opacity .25s var(--punt-ease)}
+.handstage[data-phase="playing"] .hand-overlay{opacity:1}
+.hand-msg{display:inline-flex; align-items:center; gap:10px; color:#fff;
+  font-family:var(--sans); font-size:15px; font-weight:650; letter-spacing:-.01em}
+.hand-msg::before{content:""; width:15px; height:15px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.32); border-top-color:#fff;
+  animation:handSpin .8s linear infinite}
+@keyframes handSpin{to{transform:rotate(360deg)}}
+.reduced .hand-msg::before{animation:none}
+
 /* success confirmation above the CTA */
 .successmsg{display:flex; align-items:center; gap:9px; margin-top:16px;
   font-family:var(--sans); font-size:14px; font-weight:600; color:var(--ink)}
@@ -263,7 +280,8 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .card.sel{border-color:var(--fill); box-shadow:0 0 0 1px var(--fill)}
 
 /* ===== discovery landing — ported from PRE-002 source CSS ===== */
-.disc{max-width:var(--punt-size-container-max); margin:0 auto; display:flex; flex-direction:column}
+.disc{width:100%; min-width:0; max-width:var(--punt-size-container-max); margin:0 auto;
+  display:flex; flex-direction:column}
 /* header */
 .disc-head{position:sticky; top:0; z-index:20; background:var(--punt-surface-page);
   border-bottom:1px solid var(--punt-border-strong)}
@@ -309,7 +327,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .disc-tabs{padding:0 var(--punt-space-4); background:var(--punt-surface-page);
   border-bottom:3px double var(--punt-border-strong)}
 .disc-tabrow{display:flex; justify-content:center; align-items:center; gap:var(--punt-space-5);
-  overflow-x:auto; scrollbar-width:none}
+  min-width:0; overflow-x:auto; scrollbar-width:none}
 .disc-tabrow::-webkit-scrollbar{display:none}
 .disc-tab{padding:var(--punt-space-3) 0; cursor:pointer; white-space:nowrap; flex:none;
   font-family:var(--punt-font-body); font-size:var(--punt-font-size-sm); font-weight:600;
@@ -318,7 +336,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .disc-tab[data-on="true"]::after{content:""; position:absolute; left:0; right:0; bottom:0;
   height:2px; background:var(--punt-text-primary)}
 /* feed */
-.disc-feed{display:flex; flex-direction:column; gap:var(--punt-space-4); padding:var(--punt-space-4)}
+.disc-feed{display:flex; flex-direction:column; gap:var(--punt-space-4); padding:var(--punt-space-4); min-width:0}
 .disc-band{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline;
   gap:var(--punt-space-3); padding-bottom:var(--punt-space-3);
   border-bottom:1px solid var(--punt-border-subtle)}
@@ -329,9 +347,9 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .disc-bandtitle svg{width:16px; height:16px; stroke:var(--punt-status-success); fill:none; stroke-width:2}
 .disc-bandnote{font-family:var(--punt-font-body); font-size:var(--punt-font-size-sm);
   color:var(--punt-text-secondary); font-variant-numeric:tabular-nums}
-.disc-top{display:flex; gap:var(--punt-space-1); min-height:360px}
+.disc-top{display:flex; gap:var(--punt-space-1); min-height:360px; min-width:0}
 .disc-herowrap{flex:1 1 auto; min-width:0; display:grid}
-.disc-tunerslot{flex:0 0 clamp(240px,30%,340px); display:grid}
+.disc-tunerslot{flex:0 0 clamp(240px,30%,340px); display:grid; min-width:0}
 @container (width<=52rem){
   .disc-top{flex-direction:column; min-height:0}
   .disc-herowrap{flex:none; min-height:360px}
@@ -369,7 +387,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .tuner-check svg{width:11px; height:11px; stroke:var(--punt-text-on-brand); fill:none; stroke-width:2.4}
 /* shelf */
 .disc-shelf{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
-  grid-auto-rows:392px; gap:var(--punt-space-1)}
+  grid-auto-rows:392px; gap:var(--punt-space-1); min-width:0}
 @container (width>=52rem){ .disc-shelf{grid-template-columns:repeat(4,1fr)} }
 .dcard{display:flex; flex-direction:column; width:100%; height:100%; overflow:hidden;
   background:var(--punt-surface-default); border:1px solid var(--punt-border-subtle); text-align:left}
@@ -509,6 +527,10 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
   border:1px solid var(--line-2); border-radius:6px; color:var(--ink-2); background:var(--panel)}
 .rtag svg{width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:1.7; flex:0 0 auto}
 .rtag.solid{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+/* LIVE marker sized off .rtag so it matches the room tag's height */
+.rtag.livetag::before{content:""; width:6px; height:6px; border-radius:50%; flex:0 0 auto;
+  background:var(--punt-status-success); animation:modPulse 1.8s var(--punt-ease) infinite}
+.reduced .rtag.livetag::before{animation:none}
 .ricon{width:26px; height:26px; border-radius:8px; border:1px solid var(--line-2);
   display:grid; place-items:center; flex:0 0 auto; background:var(--panel)}
 .ricon svg{width:15px; height:15px; stroke:var(--ink); fill:none; stroke-width:1.7}
@@ -874,13 +896,13 @@ const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle"},
+  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle",plyPhase:"idle"},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
-let ripT=null;
+let ripT=null, handT=null;
 function reset(v){
-  if(v==="v1"){clearTimeout(ripT);}
-  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle"};
+  if(v==="v1"){clearTimeout(ripT);clearTimeout(handT);}
+  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle",plyPhase:"idle"};
   if(v==="v2")S.v2={step:0};
 }
 
@@ -1101,6 +1123,13 @@ const V1={
       <button class="btn mt16" data-a="place">Place Combo-Play Bet · $${s.stake}</button>
     </div></div>`;
   },
+  /* A leg reads as satisfied once its room's outcome has landed — the rail card
+     and the tracker segment both key off this so they can't drift apart.
+     Actual completion still requires advancing (s.done). */
+  legMet(c){
+    const s=S.v1;
+    return !!s.done[c]||(c==="COL"&&s.colPhase==="revealed")||(c==="PLY"&&s.plyPhase==="won");
+  },
   active(){
     const s=S.v1, cnt=s.legs.filter(c=>s.done[c]).length, all=cnt===s.legs.length;
     if(all)return completeScreen("You called it, landed it, and scored it.",s.legs);
@@ -1108,19 +1137,20 @@ const V1={
        unresolved. Removes the old "nothing selected" empty state. */
     const cur=(s.active&&!s.done[s.active]) ? s.active : (s.legs.find(c=>!s.done[c])||s.legs[0]);
     const legs=s.legs.map((c)=>{
-      const done=s.done[c], sel=c===cur; const m=mkt(c);
+      const done=this.legMet(c), sel=c===cur; const m=mkt(c);
       return `<button class="leg" data-s="${done?'done':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${sel?'var(--surface)':'var(--panel)'}">
         ${legimg()}
-        <div class="body">${roomtag(c)}
+        <div class="body"><span class="row gap6">${roomtag(c)}${c==="PRE"?`<span class="rtag livetag">LIVE</span>`:""}</span>
         <div class="ttl">${m.title}</div>
         <div class="sub">${done?'Resolved':sel?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
         <div class="st">${done?tick("done"):IC_arrow()}</div></button>`;
     }).join("");
-    const rail=`<div class="rail">
-      <button class="btn ghost sm" data-a="gohome" style="align-self:flex-start;margin-bottom:14px">← Back</button>
-      <div class="row" style="justify-content:flex-end"><span class="badge live">LIVE</span></div>
-      <h3 class="h-md mt12">The Pereira Run</h3>
-      <div class="stack gap8 mt16">${legs}</div>
+    const rail=`<div class="rail rail-v1">
+      <button class="btn ghost sm" data-a="gohome" style="align-self:flex-start">← Back</button>
+      <div class="rail-mid">
+        <h3 class="h-md">The Pereira Run</h3>
+        <div class="stack gap8 mt16">${legs}</div>
+      </div>
       <div class="railfoot">
         <div class="rf-row"><span class="k">Staked</span><span class="v">$${s.stake}</span></div>
         <div class="rf-win"><span class="k">To win</span><span class="v">$${toWin(s.stake,s.legs)}</span></div>
@@ -1132,9 +1162,7 @@ const V1={
      of the right column so it spans the full working area. */
   progbar(cur){
     const s=S.v1;
-    /* A leg reads complete once its objective is met — Collect counts as soon
-       as the rip reveals the hit, not only after advancing to the next leg. */
-    const met=c=>s.done[c]||(c==="COL"&&s.colPhase==="revealed");
+    const met=c=>this.legMet(c);
     return `<div class="progbar">${s.legs.map(c=>{
       const st=met(c)?"done":(c===cur?"current":"idle");
       return `<div class="progseg" data-state="${st}" title="${ROOM[c].name}">${
@@ -1158,6 +1186,14 @@ const V1={
     const colBody=`<p class="txt">Land the Pereira hit to win the leg.</p>
       <div class="ripcards mt16" data-phase="${phase}">${ripCards}</div>
       ${phase==="revealed"?`<div class="successmsg"><span class="ok">${IC.check}</span>You landed the Pereira hit!</div>`:""}`;
+    /* Play hand: idle -> playing (3s, dimmed table + progress message) -> won */
+    const plyPhase=s.plyPhase||"idle";
+    const plyBody=`<p class="txt">Beat the dealer to win the leg.</p>
+      <div class="handstage mt16" data-phase="${plyPhase}">
+        <div class="hatch r-media"><span class="lbl">${m.title} · seat open</span></div>
+        <div class="hand-overlay"><span class="hand-msg">Hand in Progress</span></div>
+      </div>
+      ${plyPhase==="won"?`<div class="successmsg"><span class="ok">${IC.check}</span>You won the hand!</div>`:""}`;
     const body={
       PRE:`<div class="pcard mt16">
         <div class="pc-info">
@@ -1168,18 +1204,24 @@ const V1={
         <div class="pc-img hatch"><span class="lbl">Fight card · Pereira vs. Hill</span></div>
       </div>`,
       COL:colBody,
-      PLY:`<p class="txt">Take the run to the table. Clear it to bank the whole combo.</p>
-        <div class="hatch r-media mt16"><span class="lbl">${m.title} · seat open</span></div>`
+      PLY:plyBody
     };
     /* Legs opt into a secondary CTA; omitting `watch` leaves one filled button. */
+    /* "Play Next Leg" is wrong on the final open leg — there is no next one. */
+    const isLast=s.legs.filter(x=>x!==c).every(x=>s.done[x]);
+    const advance=isLast?"Bank the Combo →":"Play Next Leg →";
     let cta={
-      PRE:{watch:"Watch Fight", play:"Play Next Leg →"},
+      PRE:{watch:"Watch Fight", play:advance},
       COL:{play:"Rip Pack", action:"rip"},
-      PLY:{watch:"Watch Table", play:"Play Next Leg →"}
+      PLY:{play:"Play Hand", action:"playhand"}
     }[c];
     if(c==="COL"){
       if(phase==="ripping") cta={play:"Ripping…", disabled:true};
-      else if(phase==="revealed") cta={play:"Play Next Leg →"};
+      else if(phase==="revealed") cta={play:advance};
+    }
+    if(c==="PLY"){
+      if(plyPhase==="playing") cta={play:"Dealing…", disabled:true};
+      else if(plyPhase==="won") cta={play:advance};
     }
     return `<div class="main">
       ${this.progbar(c)}
@@ -1202,6 +1244,14 @@ const V1={
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
     else if(a==="watch"){toast("Watch view — not wired in this POC");}
+    else if(a==="playhand"){
+      s.plyPhase="playing";
+      clearTimeout(handT);
+      handT=setTimeout(()=>{
+        if(S.v!=="v1"||S.v1.plyPhase!=="playing")return;
+        S.v1.plyPhase="won"; paint(); toast("You won the hand");
+      },3000);
+    }
     else if(a==="rip"){
       s.colPhase="ripping";
       clearTimeout(ripT);
