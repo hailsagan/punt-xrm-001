@@ -132,6 +132,22 @@
 /* V1 rail: three groups on an even 24px rhythm */
 .rail-v1{gap:24px}
 .rail-mid{display:flex; flex-direction:column}
+.legcarousel{display:flex; flex-direction:column; gap:8px; margin-top:16px}
+.legdots{display:none}
+/* Mobile: legs become a swipeable carousel instead of a vertical stack —
+   the fixed 24px rail rhythm then naturally pulls the stake/win group up
+   since this group is shorter, no extra positioning needed. */
+@container (width<=40rem){
+  .legcarousel{flex-direction:row; gap:10px; margin:16px calc(-1 * var(--punt-space-4)) 0;
+    padding:0 var(--punt-space-4) 4px; overflow-x:auto; scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none}
+  .legcarousel::-webkit-scrollbar{display:none}
+  .legcarousel .leg{flex:0 0 85%; scroll-snap-align:center}
+  .legdots{display:flex; justify-content:center; gap:6px; margin-top:12px}
+}
+.legdot{width:6px; height:6px; padding:0; border:0; border-radius:999px;
+  background:var(--line-strong); cursor:pointer; flex:0 0 auto; transition:.15s var(--punt-ease)}
+.legdot[data-on="true"]{background:var(--ink); width:16px; border-radius:3px}
 /* stake / to-win, win amount emphasized */
 .railfoot{padding-top:18px; border-top:1px solid var(--line)}
 .railfoot .rf-row{display:flex; align-items:baseline; justify-content:space-between;
@@ -1161,18 +1177,20 @@ const V1={
     const cur=(s.active&&!s.done[s.active]) ? s.active : (s.legs.find(c=>!s.done[c])||s.legs[0]);
     const legs=s.legs.map((c)=>{
       const done=this.legMet(c), sel=c===cur; const m=mkt(c);
-      return `<button class="leg" data-s="${done?'done':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${sel?'var(--surface)':'var(--panel)'}">
+      return `<button class="leg" data-s="${done?'done':'ready'}" data-a="leg" data-c="${c}" data-sel="${sel?'true':'false'}" style="width:100%;text-align:left;cursor:pointer;background:${sel?'var(--surface)':'var(--panel)'}">
         ${legimg()}
         <div class="body"><span class="row gap6">${roomtag(c)}${c==="PRE"?`<span class="rtag livetag">LIVE</span>`:""}</span>
         <div class="ttl">${m.title}</div>
         <div class="sub">${done?'Resolved':sel?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
         <div class="st">${done?tick("done"):IC_arrow()}</div></button>`;
     }).join("");
+    const legdots=s.legs.map(c=>`<button class="legdot" data-a="leg" data-c="${c}" data-on="${c===cur?'true':'false'}" aria-label="${ROOM[c].name}"></button>`).join("");
     const rail=`<div class="rail rail-v1">
       <button class="btn ghost sm" data-a="gohome" style="align-self:flex-start">← Back</button>
       <div class="rail-mid">
         <h3 class="h-md">The Pereira Run</h3>
-        <div class="stack gap8 mt16">${legs}</div>
+        <div class="legcarousel">${legs}</div>
+        <div class="legdots">${legdots}</div>
       </div>
       <div class="railfoot">
         <div class="rf-row"><span class="k">Staked</span><span class="v">$${s.stake}</span></div>
@@ -1414,6 +1432,7 @@ function paint(){
   $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
   syncLegImgs();
   bindScrollHost();
+  bindLegCarousel();
   renderMiniTracker();
   scheduleV1Auto();
 }
@@ -1476,6 +1495,32 @@ function scheduleV1Auto(){
 function syncLegImgs(){
   requestAnimationFrame(()=>{
     document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
+  });
+}
+/* Mobile leg carousel: land on the selected card after each re-render (it's
+   fresh DOM each time, so scroll position doesn't carry over), and keep the
+   dots synced to whichever card the user actually swipes to. No-ops on
+   desktop, where .legcarousel isn't a horizontal scroller. */
+let legIO=null;
+function bindLegCarousel(){
+  requestAnimationFrame(()=>{
+    const car=document.querySelector(".legcarousel");
+    if(legIO){legIO.disconnect();legIO=null;}
+    if(!car||car.scrollWidth<=car.clientWidth+4)return;
+    const sel=car.querySelector('[data-sel="true"]');
+    /* instant, not smooth — only the user's own swipe should ever look animated */
+    if(sel)sel.scrollIntoView({inline:"center",block:"nearest",behavior:"instant"});
+    const dots=document.querySelectorAll(".legdot");
+    if(!dots.length)return;
+    legIO=new IntersectionObserver(entries=>{
+      entries.forEach(en=>{
+        if(en.isIntersecting&&en.intersectionRatio>0.6){
+          const c=en.target.dataset.c;
+          dots.forEach(d=>d.setAttribute("data-on",d.dataset.c===c?"true":"false"));
+        }
+      });
+    },{root:car,threshold:[0.6]});
+    car.querySelectorAll(".leg").forEach(leg=>legIO.observe(leg));
   });
 }
 
@@ -1547,7 +1592,7 @@ $("#devswitch").addEventListener("click",e=>{const b=e.target.closest("button");
   $("#stage").setAttribute("data-device",d);
   $("#frame").setAttribute("data-device",d);
   $("#devswitch").querySelectorAll("button").forEach(x=>x.setAttribute("data-on",x===b?"true":"false"));
-  syncLegImgs(); bindScrollHost(); renderMiniTracker();
+  syncLegImgs(); bindScrollHost(); bindLegCarousel(); renderMiniTracker();
 });
 // collapsed sheet toggle (small windows)
 $("#rbtoggle").addEventListener("click",()=>{const d=$("#devtools");
@@ -1559,6 +1604,7 @@ let resizeT;
 window.addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{
   document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
   positionMiniTracker();
+  bindLegCarousel();
 },120);});
 
 paint();
