@@ -388,8 +388,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .mini-tracker{position:absolute; z-index:15; display:none}
 .mini-tracker[data-show="true"]{display:block}
 .mini-tracker[data-device="desktop"]{right:20px; bottom:20px; width:290px}
-.mini-tracker[data-device="mobile"]{left:50%; bottom:12px; transform:translateX(-50%);
-  width:min(402px, calc(100% - 24px))}
+.mini-tracker[data-device="mobile"]{position:fixed}
 .mt-card{background:var(--punt-surface-default); border:1px solid var(--punt-border-subtle);
   border-radius:var(--punt-radius-lg); box-shadow:var(--punt-shadow-2); overflow:hidden;
   font-family:var(--punt-font-body); color:var(--punt-text-primary)}
@@ -1217,6 +1216,20 @@ function renderMiniTracker(){
       <button class="mt-cta" data-a="enter">View combo →</button>
     </div>
   </div>`;
+  positionMiniTracker();
+}
+/* On mobile the tracker must dock to the bottom of the phone's own screen
+   (the .viewport rect), not the outer app shell — the frame is top-aligned
+   in a taller stage, so anchoring to the shell leaves it floating below
+   the phone. Desktop just uses the static CSS corner position. */
+function positionMiniTracker(){
+  const el=$("#minitracker"); if(!el||el.getAttribute("data-show")!=="true") return;
+  if(DEVICE!=="mobile"){ el.removeAttribute("style"); return; }
+  const r=$("#app").getBoundingClientRect();
+  const gap=12, w=Math.min(402,r.width-24);
+  el.style.left=(r.left+r.width/2-w/2)+"px";
+  el.style.width=w+"px";
+  el.style.bottom=(window.innerHeight-r.bottom+gap)+"px";
 }
 function syncLegImgs(){
   requestAnimationFrame(()=>{
@@ -1303,6 +1316,7 @@ $("#rbtoggle").addEventListener("click",()=>{const d=$("#devtools");
 let resizeT;
 window.addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{
   document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
+  positionMiniTracker();
 },120);});
 
 paint();
