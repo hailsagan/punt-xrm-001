@@ -158,6 +158,10 @@
   text-transform:uppercase; color:var(--muted)}
 .railfoot .rf-win .v{font-family:var(--sans); font-size:30px; font-weight:700;
   letter-spacing:-.03em; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums}
+/* two CTAs side by side */
+.ctarow{display:flex; gap:10px; flex-wrap:wrap}
+.ctarow .btn{flex:1 1 160px; width:auto}
+
 /* leg progress — one segment per leg, spans the working column */
 .progbar{display:flex; gap:8px; padding:7px 0; margin-bottom:20px}
 .progseg{position:relative; flex:1; height:8px; border-radius:var(--punt-radius-pill);
@@ -1083,21 +1087,26 @@ const V1={
   },
   roomPanel(c){
     const s=S.v1, m=mkt(c);
+    /* Predict's copy is finalized; Collect/Play keep their existing body text
+       until their own content pass. Secondary CTA label is per-room. */
     const body={
-      PRE:`<p class="txt">Lock your call on the main event. This is one leg of your combo.</p>
-        <div class="card flat mt16"><div class="row between"><span>${m.title}</span><span class="mono" style="font-weight:640">${m.odds}</span></div>
+      PRE:`<div class="card flat mt16"><div class="row between"><span>${m.title}</span><span class="mono" style="font-weight:640">${m.odds}</span></div>
         <div class="hatch r-media mt12"><span class="lbl">Fight card · Pereira vs. Hill</span></div></div>`,
       COL:`<p class="txt">Rip your pack. A hit boosts the same ticket.</p>
         <div class="row gap10 mt16">${[0,1,2].map(i=>`<div class="hatch r-card" style="flex:1"><span class="lbl">Card ${i+1}</span></div>`).join("")}</div>`,
       PLY:`<p class="txt">Take the run to the table. Clear it to bank the whole combo.</p>
         <div class="hatch r-media mt16"><span class="lbl">${m.title} · seat open</span></div>`
     };
+    const watch={PRE:"Watch Fight",COL:"Watch Drop",PLY:"Watch Table"};
     return `<div class="main anim">
       ${this.progbar(c)}
-      <div class="row gap8">${rtag(c,1)}<span class="badge">Leg ${s.legs.indexOf(c)+1} of ${s.legs.length}</span></div>
-      <h2 class="h-lg mt12">${ROOM[c].verb}: ${m.title}</h2>
+      ${roomtag(c)}
+      <h2 class="h-lg mt12">${m.title}</h2>
       ${body[c]}
-      <button class="btn mt20" data-a="resolve" data-c="${c}">Resolve ${ROOM[c].name} leg →</button>
+      <div class="ctarow mt20">
+        <button class="btn ghost" data-a="watch" data-c="${c}">${watch[c]}</button>
+        <button class="btn" data-a="resolve" data-c="${c}">Play Next Leg →</button>
+      </div>
     </div>`;
   },
   on(a,ds){
@@ -1109,6 +1118,7 @@ const V1={
     else if(a==="leg"){s.active=ds.c;}
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
+    else if(a==="watch"){toast("Watch view — not wired in this POC");}
     else if(a==="rmleg"){ if(s.legs.length>1){ if(s.swapping===ds.c)s.swapping=null; s.legs=s.legs.filter(x=>x!==ds.c); toast(ROOM[ds.c].name+" removed"); } }
     else if(a==="addleg"){ if(!s.legs.includes(ds.c)){ if(ds.mi!==undefined)s.mk[ds.c]=+ds.mi; s.legs=PLAY.order.filter(x=>s.legs.includes(x)||x===ds.c); toast(ROOM[ds.c].name+" added"); } }
     else if(a==="swapleg"){ s.swapping=(s.swapping===ds.c?null:ds.c); }
