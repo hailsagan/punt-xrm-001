@@ -99,13 +99,27 @@
   min-height:100vh; -webkit-font-smoothing:antialiased; line-height:1.45;
 }
 
-/* ---------- app shell (full-viewport, responsive) ---------- */
-.appshell{width:100%; min-height:100vh; background:var(--panel)}
+/* ---------- stage / device frame / viewport (ported from PRE-002) ---------- */
+.appshell{width:100%; min-height:100vh; background:var(--punt-surface-page);
+  display:flex; flex-direction:column}
+.stage{flex:1; min-height:0; overflow-y:auto; background:var(--punt-surface-page)}
+.stage[data-device="mobile"]{background:#17181b; display:flex; justify-content:center;
+  align-items:flex-start; padding:24px 16px}
+.frame{position:relative}
+.frame[data-device="desktop"]{width:100%}
+.frame[data-device="mobile"]{--frame-bezel:10px; --frame-screen-radius:36px;
+  width:402px; max-width:100%; padding:var(--frame-bezel); background:#0b0b0c;
+  border-radius:46px; box-shadow:0 0 0 2px #2a2b2f, 0 18px 50px #00000080}
+.viewport{background:var(--punt-surface-page); container-type:inline-size}
+.frame[data-device="desktop"] .viewport{max-width:var(--punt-size-container-max); margin:0 auto}
+.frame[data-device="mobile"] .viewport{border-radius:var(--frame-screen-radius);
+  height:calc(100vh - 200px); max-height:820px; overflow-y:auto; scrollbar-width:none}
+.frame[data-device="mobile"] .viewport::-webkit-scrollbar{display:none}
 
 /* app top bar (room context) */
 .appbar{display:flex; align-items:center; gap:10px; padding:13px 20px;
   border-bottom:1px solid var(--line); position:sticky; top:0; z-index:30; background:var(--panel)}
-@media (min-width:760px){ .appbar{padding:15px 32px} }
+@container (width>=40rem){ .appbar{padding:15px 32px} }
 .appbar .brand{font-weight:800; letter-spacing:-.03em; font-size:17px}
 .appbar .brandsub{font-family:var(--mono); font-size:10px; letter-spacing:.24em; text-transform:uppercase;
   color:var(--muted); font-weight:500; margin-left:8px}
@@ -117,13 +131,13 @@
 
 .scroll{display:block}
 .pad{padding:22px 20px 96px; max-width:720px; margin:0 auto}
-@media (min-width:760px){ .pad{padding:34px 32px 96px} }
+@container (width>=40rem){ .pad{padding:34px 32px 96px} }
 
 /* two-pane on wider viewports */
 .layout{display:block; max-width:1180px; margin:0 auto}
 .rail{display:block; padding:22px 20px; border-bottom:1px solid var(--line)}
 .main{display:block; padding:20px 20px 96px}
-@media (min-width:760px){
+@container (width>=40rem){
   .layout{display:grid; grid-template-columns:340px 1fr; gap:0; align-items:stretch}
   .layout .rail{border-right:1px solid var(--line); border-bottom:none; padding:32px 28px; background:var(--surface); min-height:100%}
   .layout .main{padding:32px 40px 96px; min-width:0}
@@ -240,7 +254,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .disc-top{display:flex; gap:var(--punt-space-1); min-height:360px}
 .disc-herowrap{flex:1 1 auto; min-width:0; display:grid}
 .disc-tunerslot{flex:0 0 clamp(240px,30%,340px); display:grid}
-@media (max-width:900px){
+@container (width<=52rem){
   .disc-top{flex-direction:column; min-height:0}
   .disc-herowrap{flex:none; min-height:360px}
   .disc-tunerslot{flex:none}
@@ -278,7 +292,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 /* shelf */
 .disc-shelf{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
   grid-auto-rows:392px; gap:var(--punt-space-1)}
-@media (min-width:1024px){ .disc-shelf{grid-template-columns:repeat(4,1fr)} }
+@container (width>=52rem){ .disc-shelf{grid-template-columns:repeat(4,1fr)} }
 .dcard{display:flex; flex-direction:column; width:100%; height:100%; overflow:hidden;
   background:var(--punt-surface-default); border:1px solid var(--punt-border-subtle); text-align:left}
 .dcard-img{position:relative; flex:0 0 132px; min-height:0; overflow:hidden}
@@ -311,7 +325,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .dout-fill{position:absolute; inset:0 auto 0 0; height:100%; min-width:3px;
   border-radius:var(--punt-radius-pill); background:var(--punt-status-success)}
 /* discovery — small screens */
-@media (max-width:760px){
+@container (width<=40rem){
   .disc-search,.disc-editions,.disc-dateline,.disc-quote{display:none}
   .disc-utility{grid-template-columns:1fr auto; gap:var(--punt-space-3)}
   .disc-account{justify-self:end}
@@ -531,26 +545,49 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
   .dt-notes-tray{left:12px; right:12px; width:auto; bottom:132px; max-height:44vh}
 }
 
-/* ---------- review bar (full-width, fixed bottom — style borrowed from PRE-002 review harness) ---------- */
-.devtools{position:fixed; left:0; right:0; bottom:0; z-index:1000; font-family:var(--sans);
-  background:#16171a; border-top:1px solid rgba(255,255,255,.08);
-  display:flex; align-items:center; gap:22px; padding:12px 20px; overflow-x:auto}
-.rb-brand{font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.06em;
-  text-transform:uppercase; color:#6b6f78; flex:0 0 auto; white-space:nowrap}
-.rb-group{display:flex; flex-direction:column; gap:5px; flex:0 0 auto}
-.rb-grouplabel{font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:#7d818b}
-.rb-seg{display:flex; gap:2px; background:rgba(255,255,255,.05); border-radius:8px; padding:2px}
-.rb-seg button{border:0; background:transparent; color:#b7bac1; font-family:var(--sans);
-  font-size:12px; font-weight:500; padding:6px 11px; border-radius:6px; cursor:pointer;
-  display:flex; align-items:center; gap:5px; white-space:nowrap; transition:.14s}
-.rb-seg button[data-on="true"]{background:#2f3238; color:#fff}
-.rb-seg button:hover:not([data-on="true"]){color:#dfe1e5}
-.rb-actions{display:flex; align-items:center; gap:14px; margin-left:auto; flex:0 0 auto}
-.rb-action{display:inline-flex; align-items:center; gap:6px; border:0; background:transparent;
-  color:#b7bac1; font-family:var(--sans); font-size:12px; font-weight:500; cursor:pointer; padding:6px 2px; transition:.14s}
-.rb-action:hover{color:#fff}
-.rb-action.on{color:#fff}
+/* ---------- review bar (ported verbatim from PRE-002 harness) ---------- */
+.devtools{display:flex; flex-wrap:wrap; flex-shrink:0; align-items:center; gap:14px 20px;
+  padding:10px 16px; background:#16171a; color:#c9ccd3; border-top:1px solid #2c2e33;
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif; position:sticky; bottom:0; z-index:60}
+.rb-toggle{display:none}
+.rb-controls{display:contents}
+.rb-brand{font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+  color:#6b6f78; white-space:nowrap}
+.rb-group{display:flex; align-items:center; gap:8px}
+.rb-grouplabel{font-size:11px; color:#7d818b; white-space:nowrap}
+.rb-seg{display:inline-flex; gap:2px; padding:2px; background:#0e0f12;
+  border:1px solid #2c2e33; border-radius:8px}
+.rb-seg button{display:inline-flex; align-items:center; gap:5px; padding:5px 10px;
+  font:inherit; font-size:12px; color:#b7bac1; background:0 0; border:none;
+  border-radius:6px; cursor:pointer; white-space:nowrap}
+.rb-seg button:hover{color:#fff}
+.rb-seg button[data-on="true"]{color:#fff; background:#2f3238}
+.rb-seg button:focus-visible{outline:2px solid #5b8cff; outline-offset:1px}
+.rb-seg button svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2}
+.rb-action{display:inline-flex; align-items:center; gap:6px; padding:6px 11px;
+  font:inherit; font-size:12px; color:#b7bac1; background:#0e0f12;
+  border:1px solid #2c2e33; border-radius:8px; cursor:pointer; white-space:nowrap}
+.rb-action:hover{color:#fff; border-color:#3a3d44}
+.rb-action[data-on="true"]{color:#fff; background:#2f3238}
+.rb-action:focus-visible{outline:2px solid #5b8cff; outline-offset:1px}
 .rb-action svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2}
+.rb-right{margin-left:auto; display:flex; align-items:center; gap:14px}
+/* collapsed sheet on small windows — matches the reference harness */
+@media (max-width:700px){
+  .devtools{position:fixed; right:12px; bottom:12px; left:auto; width:auto;
+    padding:0; gap:0; background:0 0; border:none; z-index:60}
+  .rb-toggle{display:inline-flex; align-items:center; justify-content:center;
+    width:44px; height:44px; background:#16171a; color:#c9ccd3; border:1px solid #2c2e33;
+    border-radius:999px; cursor:pointer; box-shadow:0 6px 18px #00000073}
+  .rb-toggle svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2}
+  .rb-controls{display:none}
+  .devtools[data-open="true"] .rb-controls{display:flex; flex-direction:column;
+    align-items:stretch; gap:14px; position:fixed; left:12px; right:12px; bottom:68px;
+    max-height:72vh; overflow-y:auto; padding:16px; background:#16171a;
+    border:1px solid #2c2e33; border-radius:12px; box-shadow:0 10px 30px #0000008c}
+  .rb-right{margin-left:0}
+}
+
 /* V1 combo builder — leg controls + suggestions */
 .legctl{display:flex; gap:5px; flex:0 0 auto}
 .icbtn{width:27px; height:27px; border:1px solid var(--line-2); border-radius:7px; background:var(--panel);
@@ -582,39 +619,57 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 </style>
 
 <div class="xrm" id="xrm" data-notes="off">
-  <div class="appshell" id="stage">
-    <div id="app"></div>
+  <div class="appshell">
+    <div class="stage" id="stage" data-device="desktop">
+      <div class="frame" id="frame" data-device="desktop">
+        <div class="viewport" id="app"></div>
+      </div>
+    </div>
   </div>
   <div class="toast" id="toast"></div>
 </div>
 
-<div class="devtools" id="devtools" data-notes="off">
-  <span class="rb-brand">XRM-001 · review</span>
+<div class="devtools" id="devtools" data-notes="off" data-open="false">
+  <button class="rb-toggle" id="rbtoggle" aria-label="Show review controls" aria-expanded="false">
+    <svg viewBox="0 0 24 24"><path d="M10 5H3M12 19H3M14 3v4M16 17v4M21 12h-9M21 19h-5M21 5h-7M8 10v4M8 12H3"/></svg>
+  </button>
+  <div class="rb-controls">
+    <span class="rb-brand">XRM-001 · review</span>
 
-  <div class="rb-group" role="group" aria-label="Concept">
-    <span class="rb-grouplabel">Concept</span>
-    <div class="rb-seg" id="varlist"></div>
-  </div>
+    <div class="rb-group" role="group" aria-label="Model">
+      <span class="rb-grouplabel">Model</span>
+      <div class="rb-seg" id="varlist"></div>
+    </div>
 
-  <div class="rb-group" role="group" aria-label="Skin">
-    <span class="rb-grouplabel">Skin</span>
-    <div class="rb-seg" id="skinswitch">
-      <button data-skin="" data-on="true">Light</button>
-      <button data-skin="brand">Dark</button>
+    <div class="rb-group" role="group" aria-label="Fidelity">
+      <span class="rb-grouplabel">Fidelity</span>
+      <div class="rb-seg" id="skinswitch">
+        <button data-skin="" data-on="true">Mid-Fi</button>
+        <button data-skin="brand">Hi-Fi</button>
+      </div>
+    </div>
+
+    <div class="rb-group" role="group" aria-label="Device">
+      <span class="rb-grouplabel">Device</span>
+      <div class="rb-seg" id="devswitch">
+        <button data-device="desktop" data-on="true">
+          <svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>Desktop</button>
+        <button data-device="mobile">
+          <svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>Mobile</button>
+      </div>
+    </div>
+
+    <div class="rb-right">
+      <button class="rb-action" id="restart">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset learning
+      </button>
+      <button class="rb-action" id="notesbtn">
+        <svg viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg>
+        UX notes
+      </button>
     </div>
   </div>
-
-  <div class="rb-actions">
-    <button class="rb-action" id="notesbtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v13H8l-4 4V4z"/></svg>
-      UX notes
-    </button>
-    <button class="rb-action" id="restart">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-      Restart
-    </button>
-  </div>
-
   <div class="dt-notes-tray" id="notesband"></div>
 </div>
 
@@ -1088,7 +1143,12 @@ function paint(){
   $("#notesbtn").classList.toggle("on",S.notes);
   xrm.setAttribute("data-notes",S.notes?"on":"off");
   $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
-  document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
+  syncLegImgs();
+}
+function syncLegImgs(){
+  requestAnimationFrame(()=>{
+    document.querySelectorAll(".legimg").forEach(el=>{ el.style.width=el.getBoundingClientRect().height+"px"; });
+  });
 }
 
 /* Stake +/- only ever changes two numbers on screen — update them in place
@@ -1119,17 +1179,32 @@ varlist.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)re
 $("#notesbtn").addEventListener("click",()=>{
   S.notes=!S.notes;
   renderNotes();
-  $("#notesbtn").classList.toggle("on",S.notes);
+  $("#notesbtn").setAttribute("data-on",S.notes?"true":"false");
   xrm.setAttribute("data-notes",S.notes?"on":"off");
   $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
 });
+// Reset learning — restarts the current flow
 $("#restart").addEventListener("click",()=>{reset(S.v);paint();});
-// visual-style switch — swaps skin tokens only, never touches flow/state
+// Fidelity — Mid-Fi is the source's light theme, Hi-Fi its dark brand theme
 document.documentElement.setAttribute("data-skin","");
 $("#skinswitch").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.documentElement.setAttribute("data-skin",b.dataset.skin);
   $("#skinswitch").querySelectorAll("button").forEach(x=>x.setAttribute("data-on",x===b?"true":"false"));
+  syncLegImgs();
 });
+// Device — desktop renders full-bleed, mobile renders inside a phone frame
+$("#devswitch").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  const d=b.dataset.device;
+  $("#stage").setAttribute("data-device",d);
+  $("#frame").setAttribute("data-device",d);
+  $("#devswitch").querySelectorAll("button").forEach(x=>x.setAttribute("data-on",x===b?"true":"false"));
+  syncLegImgs();
+});
+// collapsed sheet toggle (small windows)
+$("#rbtoggle").addEventListener("click",()=>{const d=$("#devtools");
+  const open=d.getAttribute("data-open")==="true";
+  d.setAttribute("data-open",open?"false":"true");
+  $("#rbtoggle").setAttribute("aria-expanded",open?"false":"true");});
 
 let resizeT;
 window.addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{
