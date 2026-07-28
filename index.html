@@ -181,9 +181,19 @@
 .ripcards{display:flex; gap:10px}
 .ripcard{flex:1 1 0; min-width:0; perspective:1000px; border-radius:var(--r-sm);
   transition:box-shadow .18s var(--punt-ease)}
-.ripcards[data-phase="ripping"] .ripcard{animation:ripPulse .4s steps(1,end) infinite}
+/* one card lit at a time, sweeping left -> right; a 0.5s cycle gives
+   six clean passes across the 3s rip */
+.ripcards[data-phase="ripping"] .ripcard{animation:ripCycle .5s linear infinite}
+.ripcards[data-phase="ripping"] .ripcard:nth-child(1){animation-delay:0s}
+.ripcards[data-phase="ripping"] .ripcard:nth-child(2){animation-delay:.1667s}
+.ripcards[data-phase="ripping"] .ripcard:nth-child(3){animation-delay:.3334s}
 .ripcard[data-win="true"]{box-shadow:0 0 0 3px var(--accent)}
-@keyframes ripPulse{0%,49%{box-shadow:0 0 0 3px var(--ink)}50%,100%{box-shadow:0 0 0 0 transparent}}
+@keyframes ripCycle{
+  0%{box-shadow:0 0 0 3px var(--ink)}
+  33.2%{box-shadow:0 0 0 3px var(--ink)}
+  33.3%{box-shadow:0 0 0 0 transparent}
+  100%{box-shadow:0 0 0 0 transparent}
+}
 .rc-inner{position:relative; width:100%; aspect-ratio:5/7; transform-style:preserve-3d;
   transition:transform .7s cubic-bezier(.2,.7,.2,1)}
 .ripcard[data-flipped="true"] .rc-inner{transform:rotateY(180deg)}
@@ -197,7 +207,7 @@
 .successmsg .ok{width:20px; height:20px; border-radius:50%; background:var(--accent);
   display:grid; place-items:center; flex:0 0 auto}
 .successmsg .ok svg{width:11px; height:11px; stroke:var(--on-fill); fill:none; stroke-width:3}
-.reduced .ripcards[data-phase="ripping"] .ripcard{animation:none; box-shadow:0 0 0 3px var(--ink)}
+.reduced .ripcards[data-phase="ripping"] .ripcard{animation:none; box-shadow:0 0 0 3px var(--line-strong)}
 
 /* two CTAs side by side */
 .ctarow{display:flex; gap:10px; flex-wrap:wrap}
@@ -1122,10 +1132,13 @@ const V1={
      of the right column so it spans the full working area. */
   progbar(cur){
     const s=S.v1;
+    /* A leg reads complete once its objective is met — Collect counts as soon
+       as the rip reveals the hit, not only after advancing to the next leg. */
+    const met=c=>s.done[c]||(c==="COL"&&s.colPhase==="revealed");
     return `<div class="progbar">${s.legs.map(c=>{
-      const st=s.done[c]?"done":(c===cur?"current":"idle");
+      const st=met(c)?"done":(c===cur?"current":"idle");
       return `<div class="progseg" data-state="${st}" title="${ROOM[c].name}">${
-        s.done[c]?`<span class="progcheck">${IC.check}</span>`:""}</div>`;
+        met(c)?`<span class="progcheck">${IC.check}</span>`:""}</div>`;
     }).join("")}</div>`;
   },
   roomPanel(c){
@@ -1183,7 +1196,7 @@ const V1={
     const s=S.v1;
     if(a==="enter"){s.stage=s.placed?"active":"build";}
     else if(a==="stake"){s.stake=Math.max(5,s.stake+ +ds.d);}
-    else if(a==="place"){s.placed=true;s.stage="landing";}
+    else if(a==="place"){s.placed=true;s.stage="active";}
     else if(a==="gohome"){s.stage="landing";s.active=null;}
     else if(a==="leg"){s.active=ds.c;}
     else if(a==="back"){s.active=null;}
