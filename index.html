@@ -148,13 +148,14 @@
 /* V1 rail: three groups on an even 24px rhythm */
 .rail-v1{gap:24px}
 .rail-mid{display:flex; flex-direction:column}
-.legcarousel{display:flex; flex-direction:column; gap:8px; margin-top:16px}
+.legcarwrap{margin-top:16px}
+.legcarousel{display:flex; flex-direction:column; gap:8px}
 .legdots{display:none}
 /* Mobile: legs become a swipeable carousel instead of a vertical stack —
    the fixed 24px rail rhythm then naturally pulls the stake/win group up
    since this group is shorter, no extra positioning needed. */
 @container (width<=40rem){
-  .legcarousel{flex-direction:row; gap:10px; margin:16px calc(-1 * var(--punt-space-4)) 0;
+  .legcarousel{flex-direction:row; gap:10px; margin:0 calc(-1 * var(--punt-space-4)) 0;
     padding:0 var(--punt-space-4) 4px; overflow-x:auto; scroll-snap-type:x mandatory;
     -webkit-overflow-scrolling:touch; scrollbar-width:none}
   .legcarousel::-webkit-scrollbar{display:none}
@@ -170,12 +171,19 @@
    dropped, and staked/to-win becomes a bar pinned to the bottom of the
    frame (via the transform-containment above) instead of scrolling. */
 @container (width<=40rem){
-  .layout{display:flex; flex-direction:column; gap:20px;
-    padding:22px var(--punt-space-4) 100px}
+  .layout{display:flex; flex-direction:column; gap:24px;
+    padding:22px var(--punt-space-4) 260px}
   .rail{display:contents}
+  .rail-mid{display:contents}
   .main{display:contents}
   button.railback{display:none}
-  .progbar{order:-1; margin-bottom:0}
+  /* Scrolling order: title, tracker bar, this leg's detail, then the
+     carousel+dots — each its own 24px-gapped flex item off .layout, except
+     tracker-to-title which sits tighter (12px) than the rest of the rhythm. */
+  .rail-title{order:-3}
+  div.progbar{order:-2; margin-bottom:0}
+  .detail-body{order:-1; margin-top:-12px}
+  .legcarwrap{margin-top:0}
   /* left/right/bottom inset by the bezel: .railfoot's containing block is
      .frame's full padding box (its outer edges — .frame has no CSS border,
      so padding-box == border-box here), not .viewport's edges, which sit
@@ -1240,9 +1248,11 @@ const V1={
     const rail=`<div class="rail rail-v1">
       <button class="btn ghost sm railback" data-a="gohome" style="align-self:flex-start">← Back</button>
       <div class="rail-mid">
-        <h3 class="h-md">The Pereira Run</h3>
-        <div class="legcarousel">${legs}</div>
-        <div class="legdots">${legdots}</div>
+        <h3 class="h-md rail-title">The Pereira Run</h3>
+        <div class="legcarwrap">
+          <div class="legcarousel">${legs}</div>
+          <div class="legdots">${legdots}</div>
+        </div>
       </div>
       <div class="railfoot">
         <div class="rf-row"><span class="k">Staked</span><span class="v">$${s.stake}</span></div>
@@ -1307,11 +1317,12 @@ const V1={
     const cta=this.legCTA(c);
     return `<div class="main">
       ${this.progbar(c)}
-      <span class="detail-roomtag">${roomtag(c)}</span>
-      <h2 class="h-lg mt12">${m.title}</h2>
-      ${body[c]}
-      ${this.legSuccessMsg(c)}
-      <div class="detail-foot">${this.ctarow(c,cta)}</div>
+      <div class="detail-body">
+        <span class="detail-roomtag">${roomtag(c)}</span>
+        <h2 class="h-lg mt12">${m.title}</h2>
+        ${body[c]}
+      </div>
+      <div class="detail-foot">${this.legSuccessMsg(c)}${this.ctarow(c,cta)}</div>
     </div>`;
   },
   /* Shared by roomPanel's inline (desktop) CTA and the sticky railfoot's
