@@ -164,6 +164,10 @@
 .pc-info .badge.live{margin-top:auto}
 .pc-img{flex:1 1 0; min-width:0; align-self:stretch; min-height:200px;
   border-radius:var(--r-sm)}
+/* when the fight card wraps a handstage (auto-settling), the stage takes over
+   the flex-sizing role and .pc-img just fills it */
+.pcard .handstage{flex:1 1 0; min-width:0; align-self:stretch; min-height:200px}
+.pcard .handstage .pc-img{width:100%; height:100%; min-height:0}
 @container (width<=40rem){
   .pcard{flex-direction:column; gap:14px}
   .pc-info{flex:0 0 auto}
@@ -887,13 +891,13 @@ const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle",plyPhase:"idle"},
+  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle",plyPhase:"idle",prePhase:"awaiting"},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
-let ripT=null, handT=null;
+let ripT=null, handT=null, preT=null;
 function reset(v){
-  if(v==="v1"){clearTimeout(ripT);clearTimeout(handT);}
-  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle",plyPhase:"idle"};
+  if(v==="v1"){clearTimeout(ripT);clearTimeout(handT);clearTimeout(preT);preT=null;}
+  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle",plyPhase:"idle",prePhase:"awaiting"};
   if(v==="v2")S.v2={step:0};
 }
 
@@ -1119,7 +1123,8 @@ const V1={
      Actual completion still requires advancing (s.done). */
   legMet(c){
     const s=S.v1;
-    return !!s.done[c]||(c==="COL"&&s.colPhase==="revealed")||(c==="PLY"&&s.plyPhase==="won");
+    return !!s.done[c]||(c==="PRE"&&s.prePhase==="won")
+      ||(c==="COL"&&s.colPhase==="revealed")||(c==="PLY"&&s.plyPhase==="won");
   },
   active(){
     const s=S.v1, cnt=s.legs.filter(c=>s.done[c]).length, all=cnt===s.legs.length;
@@ -1177,6 +1182,8 @@ const V1={
     const colBody=`<p class="txt">Land the Pereira hit to win the leg.</p>
       <div class="ripcards mt16" data-phase="${phase}">${ripCards}</div>
       ${phase==="revealed"?`<div class="successmsg"><span class="ok">${IC.check}</span>You landed the Pereira hit!</div>`:""}`;
+    /* Predict settles on its own — the CTA stays dimmed until the result lands. */
+    const prePhase=s.prePhase||"awaiting";
     /* Play hand: idle -> playing (3s, dimmed table + progress message) -> won */
     const plyPhase=s.plyPhase||"idle";
     const plyBody=`<p class="txt">Beat the dealer to win the leg.</p>
@@ -1192,8 +1199,12 @@ const V1={
           <div class="pc-odds">${m.odds}</div>
           <span class="badge live">LIVE</span>
         </div>
-        <div class="pc-img hatch"><span class="lbl">Fight card · Pereira vs. Hill</span></div>
-      </div>`,
+        <div class="handstage" data-phase="${prePhase==="awaiting"?"playing":"idle"}">
+          <div class="pc-img hatch"><span class="lbl">Fight card · Pereira vs. Hill</span></div>
+          <div class="hand-overlay"><span class="hand-msg">Fight in Progress</span></div>
+        </div>
+      </div>
+      ${prePhase==="won"?`<div class="successmsg"><span class="ok">${IC.check}</span>Pereira Won by TKO!</div>`:""}`,
       COL:colBody,
       PLY:plyBody
     };
@@ -1202,10 +1213,11 @@ const V1={
     const isLast=s.legs.filter(x=>x!==c).every(x=>s.done[x]);
     const advance=isLast?"Bank the Combo →":"Play Next Leg →";
     let cta={
-      PRE:{watch:"Watch Fight", play:advance},
+      PRE:{play:advance},
       COL:{play:"Rip Pack", action:"rip"},
       PLY:{play:"Play Hand", action:"playhand"}
     }[c];
+    if(c==="PRE"&&prePhase==="awaiting") cta={play:"Awaiting Result", disabled:true};
     if(c==="COL"){
       if(phase==="ripping") cta={play:"Ripping…", disabled:true};
       else if(phase==="revealed") cta={play:advance};
@@ -1214,6 +1226,10 @@ const V1={
       if(plyPhase==="playing") cta={play:"Dealing…", disabled:true};
       else if(plyPhase==="won") cta={play:advance};
     }
+    /* Once every leg's outcome has landed, the CTA banks the combo from
+       whichever detail view the user happens to be on — they don't have to
+       click through each leg's own "advance" in sequence to finish. */
+    if(s.legs.every(x=>this.legMet(x))) cta={play:"Bank the Combo →", action:"bank"};
     return `<div class="main">
       ${this.progbar(c)}
       ${roomtag(c)}
@@ -1234,6 +1250,7 @@ const V1={
     else if(a==="leg"){s.active=ds.c;}
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
+    else if(a==="bank"){s.legs.forEach(c=>s.done[c]=true);s.active=null;}
     else if(a==="watch"){toast("Watch view — not wired in this POC");}
     else if(a==="playhand"){
       s.plyPhase="playing";
@@ -1370,6 +1387,7 @@ function paint(){
   syncLegImgs();
   bindScrollHost();
   renderMiniTracker();
+  scheduleV1Auto();
 }
 /* Mini tracker — persistent post-bet summary shown on the V1 landing
    screen, floating above the review bar. Desktop: a small always-open
@@ -1414,6 +1432,18 @@ function positionMiniTracker(){
   el.style.left=(r.left+r.width/2-w/2)+"px";
   el.style.width=w+"px";
   el.style.bottom=(window.innerHeight-r.bottom+gap)+"px";
+}
+/* Predict resolves on its own clock rather than a tap, so the countdown starts
+   as soon as the combo is live. Guarded by preT so re-renders don't restart it. */
+function scheduleV1Auto(){
+  if(S.v!=="v1")return;
+  const s=S.v1;
+  if(s.stage!=="active"||s.prePhase!=="awaiting"||s.done.PRE||preT)return;
+  preT=setTimeout(()=>{
+    preT=null;
+    if(S.v!=="v1"||S.v1.prePhase!=="awaiting")return;
+    S.v1.prePhase="won"; paint(); toast("Pereira won by TKO");
+  },3000);
 }
 function syncLegImgs(){
   requestAnimationFrame(()=>{
