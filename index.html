@@ -200,8 +200,9 @@
 }
 /* stake / to-win, win amount emphasized */
 .railfoot{padding-top:18px; border-top:1px solid var(--line)}
-.railfoot .rf-row{display:flex; align-items:flex-start; justify-content:space-between; gap:16px}
-.rf-stat{display:flex; flex-direction:column; gap:4px}
+.railfoot .rf-row{display:flex; align-items:center; gap:14px}
+.rf-divider{width:1px; height:26px; background:var(--line); flex:0 0 auto}
+.rf-stat{display:flex; align-items:baseline; gap:8px}
 .rf-stat .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
   text-transform:uppercase; color:var(--muted)}
 .rf-stat .v{font-family:var(--sans); font-size:30px; font-weight:500;
@@ -214,8 +215,7 @@
   align-items:flex-start; gap:10px}
 .pc-title{font-family:var(--sans); font-size:24px; font-weight:700;
   letter-spacing:-.016em; line-height:1.15; color:var(--ink)}
-.pc-odds{font-family:var(--mono); font-size:24px; font-weight:700; line-height:1;
-  letter-spacing:-.01em; color:var(--ink); font-variant-numeric:tabular-nums}
+.pc-odds{font-family:var(--mono); font-size:11.5px; color:var(--muted)}
 .pc-info .badge.live{margin-top:auto}
 .pc-img{flex:1 1 0; min-width:0; align-self:stretch; min-height:200px;
   border-radius:var(--r-sm)}
@@ -1251,6 +1251,7 @@ const V1={
       <div class="railfoot">
         <div class="rf-row">
           <div class="rf-stat"><span class="k">Staked</span><span class="v">$${s.stake}</span></div>
+          <div class="rf-divider"></div>
           <div class="rf-stat rf-win"><span class="k">To win</span><span class="v">$${toWin(s.stake,s.legs)}</span></div>
         </div>
         <div class="railfoot-cta">${successHTML}${this.ctarow(cur,cta)}</div>
@@ -1288,7 +1289,7 @@ const V1={
       PRE:`<div class="pcard mt16">
         <div class="pc-info">
           <div class="pc-title">${m.title}</div>
-          <div class="pc-odds">${m.odds}</div>
+          <div class="pc-odds">${m.sub}</div>
           <span class="badge live">LIVE</span>
         </div>
         <div class="handstage" data-phase="${prePhase==="awaiting"?"playing":"idle"}">
