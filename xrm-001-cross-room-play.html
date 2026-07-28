@@ -583,6 +583,16 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .stakecol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:center}
 .stakediv{width:1px; background:var(--line); flex:0 0 auto}
 
+/* success modal — overlays the bet detail view once every leg has landed */
+.modalscrim{position:fixed; inset:0; z-index:80; background:rgba(0,0,0,.55);
+  display:flex; align-items:center; justify-content:center; padding:20px}
+.modalcard{width:100%; max-width:400px; background:var(--panel); border-radius:var(--r-lg);
+  padding:32px 28px 28px; box-shadow:var(--shadow-lg); text-align:center}
+.modal-msg{margin:0 0 24px; font-family:var(--sans); font-size:24px; font-weight:700;
+  letter-spacing:-.02em; color:var(--ink)}
+.modal-rollup{margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--line)}
+
+
 /* pill / badge */
 .badge{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
   padding:4px 8px; border-radius:100px; border:1px solid var(--line-2); color:var(--ink-2)}
@@ -929,6 +939,28 @@ function payoutBlock(){
     <div class="stat hero"><div class="k">Cross-room bonus</div><div class="v">+15%</div></div>
   </div>`;
 }
+/* Success modal — sits over the bet detail view rather than replacing it,
+   so the last leg you resolved stays visible, dimmed, behind it. */
+function successModal(s){
+  return `<div class="modalscrim">
+    <div class="modalcard anim">
+      <p class="modal-msg">Congrats!</p>
+      <div class="stakesplit modal-rollup">
+        <div class="stakecol">
+          <span class="kicker" style="margin:0">Stake</span>
+          <div class="mono" style="font-size:20px;font-weight:700;margin-top:8px">$${s.stake}</div>
+        </div>
+        <div class="stakediv"></div>
+        <div class="stakecol">
+          <div class="mono muted" style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase">Total Won</div>
+          <div class="payline mt8" style="justify-content:center"><span class="big">$${toWin(s.stake,s.legs)}</span></div>
+        </div>
+      </div>
+      <button class="btn mt8" data-a="restart">Explore More Combo-plays</button>
+      <button class="btn ghost mt10" data-a="gohome">Back to Home</button>
+    </div>
+  </div>`;
+}
 function completeScreen(headline,legs){
   legs=legs||PLAY.order;
   return `<div class="pad anim">
@@ -1124,7 +1156,6 @@ const V1={
   },
   active(){
     const s=S.v1, cnt=s.legs.filter(c=>s.done[c]).length, all=cnt===s.legs.length;
-    if(all)return completeScreen("You called it, landed it, and scored it.",s.legs);
     /* Always land on a leg — the selected one if still open, else the next
        unresolved. Removes the old "nothing selected" empty state. */
     const cur=(s.active&&!s.done[s.active]) ? s.active : (s.legs.find(c=>!s.done[c])||s.legs[0]);
@@ -1148,7 +1179,8 @@ const V1={
         <div class="rf-win"><span class="k">To win</span><span class="v">$${toWin(s.stake,s.legs)}</span></div>
       </div>
     </div>`;
-    return appbar(cur)+`<div class="scroll"><div class="layout">${rail}${this.roomPanel(cur)}</div></div>`;
+    return appbar(cur)+`<div class="scroll"><div class="layout">${rail}${this.roomPanel(cur)}</div></div>`
+      +(all?successModal(s):"");
   },
   /* Progress across the combo's legs — one segment per leg. Sits at the top
      of the right column so it spans the full working area. */
