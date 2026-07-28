@@ -845,8 +845,8 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 
 <div class="xrm" id="xrm">
   <div class="appshell" id="appshell">
-    <div class="stage" id="stage" data-device="desktop">
-      <div class="frame" id="frame" data-device="desktop">
+    <div class="stage" id="stage" data-device="mobile">
+      <div class="frame" id="frame" data-device="mobile">
         <div class="viewport" id="app"></div>
       </div>
     </div>
@@ -868,17 +868,17 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
       <div class="rb-group" role="group" aria-label="Fidelity">
         <span class="rb-grouplabel">Fidelity</span>
         <div class="rb-seg" id="skinswitch">
-          <button data-skin="" data-on="true">Mid-Fi</button>
-          <button data-skin="brand">Hi-Fi</button>
+          <button data-skin="">Mid-Fi</button>
+          <button data-skin="brand" data-on="true">Hi-Fi</button>
         </div>
       </div>
 
       <div class="rb-group" role="group" aria-label="Device">
         <span class="rb-grouplabel">Device</span>
         <div class="rb-seg" id="devswitch">
-          <button data-device="desktop" data-on="true">
+          <button data-device="desktop">
             <svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>Desktop</button>
-          <button data-device="mobile">
+          <button data-device="mobile" data-on="true">
             <svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>Mobile</button>
         </div>
       </div>
@@ -1507,7 +1507,7 @@ function paint(){
    screen, floating above the review bar. Desktop: a small always-open
    card, bottom-right. Mobile: a full-width bar above the bar, with its
    own minimize/expand state so it doesn't compete with the framed phone. */
-let DEVICE="desktop";
+let DEVICE="mobile";
 function renderMiniTracker(){
   const el=$("#minitracker"); if(!el) return;
   const s=S.v1;
@@ -1640,7 +1640,7 @@ varlist.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)re
 // Reset learning — restarts the current flow
 $("#restart").addEventListener("click",()=>{reset(S.v);paint();});
 // Fidelity — Mid-Fi is the source's light theme, Hi-Fi its dark brand theme
-document.documentElement.setAttribute("data-skin","");
+document.documentElement.setAttribute("data-skin","brand");
 $("#skinswitch").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.documentElement.setAttribute("data-skin",b.dataset.skin);
   $("#skinswitch").querySelectorAll("button").forEach(x=>x.setAttribute("data-on",x===b?"true":"false"));
