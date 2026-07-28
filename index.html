@@ -200,14 +200,13 @@
 }
 /* stake / to-win, win amount emphasized */
 .railfoot{padding-top:18px; border-top:1px solid var(--line)}
-.railfoot .rf-row{display:flex; align-items:baseline; justify-content:space-between;
-  font-family:var(--mono); font-size:11.5px; color:var(--muted)}
-.railfoot .rf-row .v{color:var(--ink-2); font-variant-numeric:tabular-nums}
-.railfoot .rf-win{display:flex; align-items:baseline; justify-content:space-between; margin-top:8px}
-.railfoot .rf-win .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+.railfoot .rf-row{display:flex; align-items:flex-start; justify-content:space-between; gap:16px}
+.rf-stat{display:flex; flex-direction:column; gap:4px}
+.rf-stat .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
   text-transform:uppercase; color:var(--muted)}
-.railfoot .rf-win .v{font-family:var(--sans); font-size:30px; font-weight:700;
-  letter-spacing:-.03em; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums}
+.rf-stat .v{font-family:var(--sans); font-size:30px; font-weight:500;
+  letter-spacing:-.03em; line-height:1; color:var(--ink-2); font-variant-numeric:tabular-nums}
+.rf-win .v{font-weight:700; color:var(--accent)}
 /* Predict leg card — text column left, media right (stacks when narrow) */
 .pcard{display:flex; gap:18px; align-items:stretch; padding:16px;
   background:var(--surface); border:1px solid var(--line); border-radius:var(--r)}
@@ -1250,8 +1249,10 @@ const V1={
         </div>
       </div>
       <div class="railfoot">
-        <div class="rf-row"><span class="k">Staked</span><span class="v">$${s.stake}</span></div>
-        <div class="rf-win"><span class="k">To win</span><span class="v">$${toWin(s.stake,s.legs)}</span></div>
+        <div class="rf-row">
+          <div class="rf-stat"><span class="k">Staked</span><span class="v">$${s.stake}</span></div>
+          <div class="rf-stat rf-win"><span class="k">To win</span><span class="v">$${toWin(s.stake,s.legs)}</span></div>
+        </div>
         <div class="railfoot-cta">${successHTML}${this.ctarow(cur,cta)}</div>
       </div>
     </div>`;
