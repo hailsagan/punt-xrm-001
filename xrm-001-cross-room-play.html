@@ -598,6 +598,14 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .leg .ttl{font-size:13.5px; font-weight:560; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .leg .sub{font-size:11.5px; color:var(--muted); margin-top:1px; font-family:var(--mono)}
 .leg .st{flex:0 0 auto}
+@container (width<=40rem){
+  /* Longer sub copy (e.g. "Land the Pereira rookie") wraps to a 2nd line on
+     narrow cards, making that row taller — and since .legimg is squared off
+     to match its own row's height (see syncLegImgs), its thumbnail ends up
+     a different size than a single-line row's. Truncate to one line so
+     every leg row — and thumbnail — matches. */
+  .leg .sub{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+}
 .leg[data-s="locked"]{border-style:dashed; opacity:.6}
 .leg[data-s="ready"]{border-color:var(--line-strong)}
 .leg[data-s="ready"]::before{content:""; position:absolute; inset:-1px; border-radius:12px;
