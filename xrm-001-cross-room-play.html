@@ -112,19 +112,6 @@
   height:820px; overflow-y:auto; overflow-x:hidden; scrollbar-width:none}
 .frame[data-device="mobile"] .viewport::-webkit-scrollbar{display:none}
 
-/* app top bar (room context) */
-.appbar{display:flex; align-items:center; gap:10px; padding:13px 20px;
-  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:30; background:var(--panel)}
-@container (width>=40rem){ .appbar{padding:15px 32px} }
-.appbar .brand{font-weight:800; letter-spacing:-.03em; font-size:17px}
-.appbar .brandsub{font-family:var(--mono); font-size:10px; letter-spacing:.24em; text-transform:uppercase;
-  color:var(--muted); font-weight:500; margin-left:8px}
-.appbar .roomswitch{margin-left:auto; display:flex; gap:5px}
-.roompill{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; padding:5px 8px;
-  border:1px solid var(--line-2); border-radius:7px; color:var(--muted); display:flex; align-items:center; gap:5px}
-.roompill.on{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
-.roompill svg{width:12px; height:12px}
-
 .scroll{display:flex; flex-direction:column; flex:1 0 auto; min-height:0}
 .pad{padding:22px 20px 96px; max-width:720px; margin:0 auto}
 @container (width>=40rem){ .pad{padding:34px 32px 96px} }
@@ -887,7 +874,9 @@ const META={
       move:"Movement is the only way forward and every move is powered by the last — unmistakably one continuous play.",
       risk:"Gating can read as a forced funnel if a losing leg dead-ends the run; needs a graceful fail path."}
 };
-const ORDER=["v1","v2"];
+/* "v2" (Bet It Forward) suppressed from the review bar for now — add it back
+   to re-enable; the concept itself is untouched. */
+const ORDER=["v1"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
@@ -952,9 +941,36 @@ function completeScreen(headline,legs){
     <button class="btn ghost mt8" data-a="restart">Back to start</button>
   </div>`;
 }
-function appbar(active){
-  return `<div class="appbar"><span class="brand">Punt</span></div>`;
+/* Shared discovery header — used on the landing feed and every sub-page.
+   activeTab selects which category pill is highlighted; pass none on
+   sub-pages so "Featured" doesn't read as still selected. */
+function discHeader(activeTab){
+  const tabs=["Featured","Politics","Economics","Sports","Crypto","Tech","Culture","Climate"]
+    .map(t=>`<button class="disc-tab" data-on="${t===activeTab}">${t}</button>`).join("");
+  return `<header class="disc-head">
+    <div class="disc-utility">
+      <div class="disc-uleft">
+        <span class="disc-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Search markets</span></span>
+      </div>
+      <nav class="disc-editions">
+        <button class="disc-edition" data-on="true">Predict</button>
+        <button class="disc-edition">Play</button>
+        <button class="disc-edition">Collect</button>
+      </nav>
+      <div class="disc-account">
+        <button class="disc-wallet"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5"/><path d="M17.5 12.5h.01"/></svg>$250.00</button>
+        <button class="disc-avatar"><svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+      </div>
+    </div>
+    <div class="disc-flag">
+      <div class="disc-dateline"><time>Monday, July 27, 2026</time><span class="sub">Today’s Board</span></div>
+      <div class="disc-logo">${LOGO}</div>
+      <div class="disc-quote"><span class="l">Volume</span><span class="v">$164.7M</span><span class="m">+2.18¢ ↑</span></div>
+    </div>
+    <nav class="disc-tabs"><div class="disc-tabrow">${tabs}</div></nav>
+  </header>`;
 }
+function appbar(){ return discHeader(); }
 
 /* ============================================================ V1 · SLIP */
 const V1={
@@ -966,8 +982,6 @@ const V1={
   },
   landing(){
     const st=S.v1;
-    const tabs=["Featured","Politics","Economics","Sports","Crypto","Tech","Culture","Climate"]
-      .map((t,i)=>`<button class="disc-tab" data-on="${i===0}">${t}</button>`).join("");
     const topics=[["01","Politics","Elections / Congress"],["02","Economics","Fed / CPI / S&P"],
       ["03","Sports","MLB / NFL / Tennis"],["04","Crypto","BTC / ETH / SOL"],
       ["05","Tech","AI / Apple / Tesla"],["06","Culture","Movies / Music"],["07","Climate","Storms / Heat"]]
@@ -997,28 +1011,7 @@ const V1={
     const heroLegs=st.legs.map(c=>`<div class="hero-leg">
       <span class="rm">${ROOM[c].name}</span><span class="pk">${mkt(c).title}</span></div>`).join("");
     return `<div class="scroll anim"><div class="disc">
-      <header class="disc-head">
-        <div class="disc-utility">
-          <div class="disc-uleft">
-            <span class="disc-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Search markets</span></span>
-          </div>
-          <nav class="disc-editions">
-            <button class="disc-edition" data-on="true">Predict</button>
-            <button class="disc-edition">Play</button>
-            <button class="disc-edition">Collect</button>
-          </nav>
-          <div class="disc-account">
-            <button class="disc-wallet"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5"/><path d="M17.5 12.5h.01"/></svg>$250.00</button>
-            <button class="disc-avatar"><svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
-          </div>
-        </div>
-        <div class="disc-flag">
-          <div class="disc-dateline"><time>Monday, July 27, 2026</time><span class="sub">Today’s Board</span></div>
-          <div class="disc-logo">${LOGO}</div>
-          <div class="disc-quote"><span class="l">Volume</span><span class="v">$164.7M</span><span class="m">+2.18¢ ↑</span></div>
-        </div>
-        <nav class="disc-tabs"><div class="disc-tabrow">${tabs}</div></nav>
-      </header>
+      ${discHeader("Featured")}
       <div class="disc-feed">
         <header class="disc-band">
           <h2 class="disc-bandtitle"><svg viewBox="0 0 24 24"><path d="M12 3q1 4 4 6.5t3 5.5a7 7 0 1 1-14 0c0-2 1-4 3-5.5"/></svg>Trending now</h2>
