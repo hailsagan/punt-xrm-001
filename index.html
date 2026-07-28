@@ -1380,7 +1380,16 @@ const V1={
     else if(a==="gohome"){s.stage="landing";s.active=null;}
     else if(a==="leg"){s.active=ds.c;}
     else if(a==="back"){s.active=null;}
-    else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
+    else if(a==="resolve"){
+      s.done[ds.c]=true;
+      /* Advance to the next card inline first — only fall back to
+         scanning for "the" unresolved leg if the user reached this leg
+         out of order and the next one inline is already done, so we
+         never land back on a resolved leg. */
+      const i=s.legs.indexOf(ds.c), next=s.legs[(i+1)%s.legs.length];
+      s.active = s.done[next] ? (s.legs.find(c=>!s.done[c])||null) : next;
+      toast(ROOM[ds.c].name+" leg resolved ✓");
+    }
     else if(a==="bank"){s.legs.forEach(c=>s.done[c]=true);s.active=null;}
     else if(a==="watch"){toast("Watch view — not wired in this POC");}
     else if(a==="playhand"){
