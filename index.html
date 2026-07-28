@@ -1052,7 +1052,7 @@ function completeScreen(headline,legs){
 /* Shared discovery header — used on the landing feed and every sub-page.
    activeTab selects which category pill is highlighted; pass none on
    sub-pages so "Featured" doesn't read as still selected. */
-function discHeader(activeTab){
+function discHeader(activeTab, showTabs=true){
   const tabs=["Featured","Politics","Economics","Sports","Crypto","Tech","Culture","Climate"]
     .map(t=>`<button class="disc-tab" data-on="${t===activeTab}">${t}</button>`).join("");
   return `<header class="disc-head">
@@ -1075,10 +1075,13 @@ function discHeader(activeTab){
       <div class="disc-logo">${LOGO}</div>
       <div class="disc-quote"><span class="l">Volume</span><span class="v">$164.7M</span><span class="m">+2.18¢ ↑</span></div>
     </div>
-    <nav class="disc-tabs"><div class="disc-tabrow">${tabs}</div></nav>
+    ${showTabs?`<nav class="disc-tabs"><div class="disc-tabrow">${tabs}</div></nav>`:""}
   </header>`;
 }
-function appbar(){ return discHeader(); }
+/* Sub-pages drop the category tabs row entirely — only the main landing
+   feed needs a category switcher. The header just ends after the masthead;
+   whatever follows in the page's own flow naturally moves up to meet it. */
+function appbar(){ return discHeader(null, false); }
 
 /* ============================================================ V1 · SLIP */
 const V1={
