@@ -168,12 +168,12 @@
   .rail-mid{display:contents}
   .main{display:contents}
   /* Scrolling order: title, the carousel+dots, then this leg's detail —
-     each its own 24px-gapped flex item off .layout, except title-to-carousel
-     which is tightened to match the reduced top padding above the eyebrow. */
+     title-to-carousel and carousel-to-detail both tightened below the
+     .layout's default 24px rhythm. */
   .rail-title{order:-2}
   .rail-title .h-lg{font-size:19px}
   .legcarwrap{order:-1; margin-top:-8px}
-  .detail-body{margin-top:0}
+  .detail-body{margin-top:-8px}
   /* left/right/bottom inset by the bezel: .railfoot's containing block is
      .frame's full padding box (its outer edges — .frame has no CSS border,
      so padding-box == border-box here), not .viewport's edges, which sit
