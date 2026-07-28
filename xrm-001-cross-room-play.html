@@ -149,6 +149,25 @@
   text-transform:uppercase; color:var(--muted)}
 .railfoot .rf-win .v{font-family:var(--sans); font-size:30px; font-weight:700;
   letter-spacing:-.03em; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums}
+/* Predict leg card — text column left, media right (stacks when narrow) */
+.pcard{display:flex; gap:18px; align-items:stretch; padding:16px;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r)}
+.pc-info{flex:0 0 32%; min-width:0; display:flex; flex-direction:column;
+  align-items:flex-start; gap:10px}
+.pc-title{font-family:var(--sans); font-size:18px; font-weight:650;
+  letter-spacing:-.012em; line-height:1.22; color:var(--ink)}
+.pc-odds{font-family:var(--mono); font-size:24px; font-weight:700; line-height:1;
+  letter-spacing:-.01em; color:var(--ink); font-variant-numeric:tabular-nums}
+.pc-info .badge.live{margin-top:auto}
+.pc-img{flex:1 1 0; min-width:0; align-self:stretch; min-height:200px;
+  border-radius:var(--r-sm)}
+@container (width<=40rem){
+  .pcard{flex-direction:column; gap:14px}
+  .pc-info{flex:0 0 auto}
+  .pc-info .badge.live{margin-top:0}
+  .pc-img{min-height:150px; aspect-ratio:16/9}
+}
+
 /* two CTAs side by side */
 .ctarow{display:flex; gap:10px; flex-wrap:wrap}
 .ctarow .btn{flex:1 1 160px; width:auto}
@@ -1081,8 +1100,14 @@ const V1={
     /* Predict's copy is finalized; Collect/Play keep their existing body text
        until their own content pass. Secondary CTA label is per-room. */
     const body={
-      PRE:`<div class="card flat mt16"><div class="row between"><span>${m.title}</span><span class="mono" style="font-weight:640">${m.odds}</span></div>
-        <div class="hatch r-media mt12"><span class="lbl">Fight card · Pereira vs. Hill</span></div></div>`,
+      PRE:`<div class="pcard mt16">
+        <div class="pc-info">
+          <div class="pc-title">${m.title}</div>
+          <div class="pc-odds">${m.odds}</div>
+          <span class="badge live">LIVE</span>
+        </div>
+        <div class="pc-img hatch"><span class="lbl">Fight card · Pereira vs. Hill</span></div>
+      </div>`,
       COL:`<p class="txt">Rip your pack. A hit boosts the same ticket.</p>
         <div class="row gap10 mt16">${[0,1,2].map(i=>`<div class="hatch r-card" style="flex:1"><span class="lbl">Card ${i+1}</span></div>`).join("")}</div>`,
       PLY:`<p class="txt">Take the run to the table. Clear it to bank the whole combo.</p>
