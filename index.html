@@ -176,7 +176,6 @@
   .rail{display:contents}
   .rail-mid{display:contents}
   .main{display:contents}
-  button.railback{display:none}
   /* Scrolling order: title, tracker bar, this leg's detail, then the
      carousel+dots — each its own 24px-gapped flex item off .layout, except
      tracker-to-title which sits tighter (12px) than the rest of the rhythm. */
@@ -1252,7 +1251,6 @@ const V1={
        show its own mobile-only copy of the current leg's CTA/success state. */
     const cta=this.legCTA(cur), successHTML=this.legSuccessMsg(cur);
     const rail=`<div class="rail rail-v1">
-      <button class="btn ghost sm railback" data-a="gohome" style="align-self:flex-start">← Back</button>
       <div class="rail-mid">
         <div class="rail-title">
           <span class="kicker">Featured Combo-play</span>
