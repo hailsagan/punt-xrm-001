@@ -104,6 +104,7 @@
 .appshell{flex:1; min-height:0; width:100%; background:var(--punt-surface-page);
   display:flex; flex-direction:column; position:relative}
 .stage{flex:1; min-height:0; overflow-y:auto; background:var(--punt-surface-page)}
+.stage[data-device="desktop"]{display:flex; flex-direction:column}
 .stage[data-device="mobile"]{background:#17181b; display:flex; justify-content:center;
   align-items:flex-start; padding:24px 16px}
 .frame{position:relative}
@@ -111,8 +112,11 @@
 .frame[data-device="mobile"]{--frame-bezel:10px; --frame-screen-radius:36px;
   width:402px; max-width:100%; padding:var(--frame-bezel); background:#0b0b0c;
   border-radius:46px; box-shadow:0 0 0 2px #2a2b2f, 0 18px 50px #00000080}
-.viewport{background:var(--punt-surface-page); container-type:inline-size}
-.frame[data-device="desktop"] .viewport{max-width:var(--punt-size-container-max); margin:0 auto}
+.viewport{background:var(--punt-surface-page); container-type:inline-size;
+  display:flex; flex-direction:column}
+.frame[data-device="desktop"]{flex:1 0 auto; display:flex; flex-direction:column}
+.frame[data-device="desktop"] .viewport{max-width:var(--punt-size-container-max);
+  margin:0 auto; width:100%; flex:1 0 auto}
 .frame[data-device="mobile"] .viewport{border-radius:var(--frame-screen-radius);
   height:820px; overflow-y:auto; scrollbar-width:none}
 .frame[data-device="mobile"] .viewport::-webkit-scrollbar{display:none}
@@ -130,20 +134,40 @@
 .roompill.on{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
 .roompill svg{width:12px; height:12px}
 
-.scroll{display:block}
+.scroll{display:flex; flex-direction:column; flex:1 0 auto; min-height:0}
 .pad{padding:22px 20px 96px; max-width:720px; margin:0 auto}
 @container (width>=40rem){ .pad{padding:34px 32px 96px} }
 
 /* two-pane on wider viewports */
-.layout{display:block; max-width:1180px; margin:0 auto}
-.rail{display:block; padding:22px 20px; border-bottom:1px solid var(--line)}
+.layout{display:block; max-width:1180px; margin:0 auto; width:100%; flex:1 0 auto}
+.rail{display:flex; flex-direction:column; padding:22px 20px; border-bottom:1px solid var(--line)}
 .main{display:block; padding:20px 20px 96px}
 @container (width>=40rem){
   .layout{display:grid; grid-template-columns:340px 1fr; gap:0; align-items:stretch}
-  .layout .rail{border-right:1px solid var(--line); border-bottom:none; padding:32px 28px; background:var(--surface); min-height:100%}
+  .layout .rail{border-right:1px solid var(--line); border-bottom:none; padding:32px 28px; background:var(--surface)}
   .layout .main{padding:32px 40px 96px; min-width:0}
   .layout .rail.plain{background:var(--panel)}
 }
+/* stake / to-win pinned to the bottom of the rail, win amount emphasized */
+.railfoot{margin-top:auto; padding-top:18px; border-top:1px solid var(--line)}
+.railfoot .rf-row{display:flex; align-items:baseline; justify-content:space-between;
+  font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+.railfoot .rf-row .v{color:var(--ink-2); font-variant-numeric:tabular-nums}
+.railfoot .rf-win{display:flex; align-items:baseline; justify-content:space-between; margin-top:8px}
+.railfoot .rf-win .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted)}
+.railfoot .rf-win .v{font-family:var(--sans); font-size:30px; font-weight:700;
+  letter-spacing:-.03em; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums}
+/* leg progress — one segment per leg, spans the working column */
+.progbar{display:flex; gap:8px; padding:7px 0; margin-bottom:20px}
+.progseg{position:relative; flex:1; height:8px; border-radius:var(--punt-radius-pill);
+  background:var(--surface-2); transition:background .2s var(--punt-ease), box-shadow .2s var(--punt-ease)}
+.progseg[data-state="current"]{background:var(--line-strong); box-shadow:0 0 0 2px var(--ring)}
+.progseg[data-state="done"]{background:var(--accent)}
+.progcheck{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:20px; height:20px; border-radius:50%; background:var(--accent);
+  display:grid; place-items:center; box-shadow:0 0 0 3px var(--panel)}
+.progcheck svg{width:11px; height:11px; stroke:var(--on-fill); fill:none; stroke-width:3}
 
 /* ---------- primitives ---------- */
 .kicker{font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
@@ -423,6 +447,18 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 
 /* leg-card image placeholder: square, left-aligned, 8px inset from card edges */
 .legimg{flex:0 0 auto; align-self:stretch; margin:-6px 0 -6px -6px; border-radius:var(--r-sm)}
+
+/* room tag + icon */
+.rtag{display:inline-flex; align-items:center; gap:5px; padding:3px 7px; white-space:nowrap;
+  font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  border:1px solid var(--line-2); border-radius:6px; color:var(--ink-2); background:var(--panel)}
+.rtag svg{width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:1.7; flex:0 0 auto}
+.rtag.solid{background:var(--fill); color:var(--on-fill); border-color:var(--fill)}
+.ricon{width:26px; height:26px; border-radius:8px; border:1px solid var(--line-2);
+  display:grid; place-items:center; flex:0 0 auto; background:var(--panel)}
+.ricon svg{width:15px; height:15px; stroke:var(--ink); fill:none; stroke-width:1.7}
+.ricon.solid{background:var(--fill); border-color:var(--fill)}
+.ricon.solid svg{stroke:var(--on-fill)}
 
 /* hatch placeholder */
 .hatch{background-image:repeating-linear-gradient(45deg,var(--hatch) 0 1px,transparent 1px 7px);
@@ -1011,33 +1047,39 @@ const V1={
   active(){
     const s=S.v1, cnt=s.legs.filter(c=>s.done[c]).length, all=cnt===s.legs.length;
     if(all)return completeScreen("You called it, landed it, and scored it.",s.legs);
+    /* Always land on a leg — the selected one if still open, else the next
+       unresolved. Removes the old "nothing selected" empty state. */
+    const cur=(s.active&&!s.done[s.active]) ? s.active : (s.legs.find(c=>!s.done[c])||s.legs[0]);
     const legs=s.legs.map((c)=>{
-      const done=s.done[c]; const cur=s.active===c; const m=mkt(c);
-      return `<button class="leg" data-s="${cur?'ready':done?'done':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${cur?'var(--surface)':'var(--panel)'}">
+      const done=s.done[c], sel=c===cur; const m=mkt(c);
+      return `<button class="leg" data-s="${done?'done':'ready'}" data-a="leg" data-c="${c}" style="width:100%;text-align:left;cursor:pointer;background:${sel?'var(--surface)':'var(--panel)'}">
         ${legimg()}
         <div class="body">${roomtag(c)}
         <div class="ttl">${m.title}</div>
-        <div class="sub">${done?'Resolved':cur?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
+        <div class="sub">${done?'Resolved':sel?'Open — in room now':'Tap to enter '+ROOM[c].name}</div></div>
         <div class="st">${done?tick("done"):IC_arrow()}</div></button>`;
     }).join("");
     const rail=`<div class="rail">
-      <button class="btn ghost sm" data-a="gohome" style="margin-bottom:14px">← Home</button>
-      <div class="row between"><span class="rtag solid">${IC.cross}XRM SLIP</span>
-        <span class="badge live">LIVE</span></div>
+      <button class="btn ghost sm" data-a="gohome" style="align-self:flex-start;margin-bottom:14px">← Back</button>
+      <div class="row" style="justify-content:flex-end"><span class="badge live">LIVE</span></div>
       <h3 class="h-md mt12">The Pereira Run</h3>
-      <div class="mono muted" style="font-size:11.5px;margin-top:3px">Stake $${s.stake} · to win $${toWin(s.stake,s.legs)}</div>
-      ${meter(cnt,all&&s.legs.length>=3)}
       <div class="stack gap8 mt16">${legs}</div>
-      <div class="mono muted mt12" style="font-size:11px">${cnt}/${s.legs.length} rooms resolved</div>
+      <div class="railfoot">
+        <div class="rf-row"><span class="k">Staked</span><span class="v">$${s.stake}</span></div>
+        <div class="rf-win"><span class="k">To win</span><span class="v">$${toWin(s.stake,s.legs)}</span></div>
+      </div>
     </div>`;
-    let main;
-    if(s.active){ main=this.roomPanel(s.active); }
-    else{
-      main=`<div class="main"><span class="kicker">Combo live</span>
-        <h2 class="h-lg mt8">${s.legs.length===1?'One room to play.':s.legs.length+' rooms to play.'}</h2>
-        <p class="txt">Tap a leg to play it. Your slip travels with you.</p></div>`;
-    }
-    return appbar(s.active)+`<div class="scroll"><div class="layout">${rail}${main}</div></div>`;
+    return appbar(cur)+`<div class="scroll"><div class="layout">${rail}${this.roomPanel(cur)}</div></div>`;
+  },
+  /* Progress across the combo's legs — one segment per leg. Sits at the top
+     of the right column so it spans the full working area. */
+  progbar(cur){
+    const s=S.v1;
+    return `<div class="progbar">${s.legs.map(c=>{
+      const st=s.done[c]?"done":(c===cur?"current":"idle");
+      return `<div class="progseg" data-state="${st}" title="${ROOM[c].name}">${
+        s.done[c]?`<span class="progcheck">${IC.check}</span>`:""}</div>`;
+    }).join("")}</div>`;
   },
   roomPanel(c){
     const s=S.v1, m=mkt(c);
@@ -1051,7 +1093,7 @@ const V1={
         <div class="hatch r-media mt16"><span class="lbl">${m.title} · seat open</span></div>`
     };
     return `<div class="main anim">
-      <button class="btn ghost sm" data-a="back" style="margin-bottom:14px">← Back to slip</button>
+      ${this.progbar(c)}
       <div class="row gap8">${rtag(c,1)}<span class="badge">Leg ${s.legs.indexOf(c)+1} of ${s.legs.length}</span></div>
       <h2 class="h-lg mt12">${ROOM[c].verb}: ${m.title}</h2>
       ${body[c]}
