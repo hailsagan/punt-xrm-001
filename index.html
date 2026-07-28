@@ -172,15 +172,16 @@
    frame (via the transform-containment above) instead of scrolling. */
 @container (width<=40rem){
   .layout{display:flex; flex-direction:column; gap:24px;
-    padding:24px var(--punt-space-4) 260px}
+    padding:16px var(--punt-space-4) 260px}
   .rail{display:contents}
   .rail-mid{display:contents}
   .main{display:contents}
   /* Scrolling order: title, this leg's detail, then the carousel+dots —
-     each its own 24px-gapped flex item off .layout. */
+     each its own 24px-gapped flex item off .layout, except title-to-detail
+     which is tightened to match the reduced top padding above the eyebrow. */
   .rail-title{order:-2}
   .rail-title .h-lg{font-size:22px}
-  .detail-body{order:-1}
+  .detail-body{order:-1; margin-top:-8px}
   .legcarwrap{margin-top:0}
   /* left/right/bottom inset by the bezel: .railfoot's containing block is
      .frame's full padding box (its outer edges — .frame has no CSS border,
