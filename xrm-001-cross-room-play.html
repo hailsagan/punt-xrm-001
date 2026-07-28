@@ -94,7 +94,7 @@
 /* ---------- stage / device frame / viewport (ported from PRE-002) ---------- */
 .appshell{flex:1; min-height:0; width:100%; background:var(--punt-surface-page);
   display:flex; flex-direction:column; position:relative}
-.stage{flex:1; min-height:0; overflow-y:auto; background:var(--punt-surface-page)}
+.stage{flex:1; min-height:0; overflow-y:auto; scrollbar-gutter:stable; background:var(--punt-surface-page)}
 .stage[data-device="desktop"]{display:flex; flex-direction:column}
 .stage[data-device="mobile"]{background:#17181b; display:flex; justify-content:center;
   align-items:flex-start; padding:24px 16px}
@@ -109,7 +109,7 @@
 .frame[data-device="desktop"] .viewport{max-width:var(--punt-size-container-max);
   margin:0 auto; width:100%; flex:1 0 auto}
 .frame[data-device="mobile"] .viewport{border-radius:var(--frame-screen-radius);
-  height:820px; overflow-y:auto; scrollbar-width:none}
+  height:820px; overflow-y:auto; overflow-x:hidden; scrollbar-width:none}
 .frame[data-device="mobile"] .viewport::-webkit-scrollbar{display:none}
 
 /* app top bar (room context) */
@@ -167,6 +167,28 @@
   .pc-info .badge.live{margin-top:0}
   .pc-img{min-height:150px; aspect-ratio:16/9}
 }
+
+/* Collect rip — synchronized border pulse, then the winner flips */
+.ripcards{display:flex; gap:10px}
+.ripcard{flex:1 1 0; min-width:0; perspective:1000px; border-radius:var(--r-sm);
+  transition:box-shadow .18s var(--punt-ease)}
+.ripcards[data-phase="ripping"] .ripcard{animation:ripPulse .4s steps(1,end) infinite}
+.ripcard[data-win="true"]{box-shadow:0 0 0 3px var(--accent)}
+@keyframes ripPulse{0%,49%{box-shadow:0 0 0 3px var(--ink)}50%,100%{box-shadow:0 0 0 0 transparent}}
+.rc-inner{position:relative; width:100%; aspect-ratio:5/7; transform-style:preserve-3d;
+  transition:transform .7s cubic-bezier(.2,.7,.2,1)}
+.ripcard[data-flipped="true"] .rc-inner{transform:rotateY(180deg)}
+/* .hatch also sets position:relative — scope these so they win regardless of order */
+.ripcard .rc-face{position:absolute; inset:0; backface-visibility:hidden;
+  -webkit-backface-visibility:hidden; border-radius:var(--r-sm)}
+.ripcard .rc-back{transform:rotateY(180deg); background-color:var(--surface-2)}
+/* success confirmation above the CTA */
+.successmsg{display:flex; align-items:center; gap:9px; margin-top:16px;
+  font-family:var(--sans); font-size:14px; font-weight:600; color:var(--ink)}
+.successmsg .ok{width:20px; height:20px; border-radius:50%; background:var(--accent);
+  display:grid; place-items:center; flex:0 0 auto}
+.successmsg .ok svg{width:11px; height:11px; stroke:var(--on-fill); fill:none; stroke-width:3}
+.reduced .ripcards[data-phase="ripping"] .ripcard{animation:none; box-shadow:0 0 0 3px var(--ink)}
 
 /* two CTAs side by side */
 .ctarow{display:flex; gap:10px; flex-wrap:wrap}
@@ -833,11 +855,13 @@ const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false},
+  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle"},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
+let ripT=null;
 function reset(v){
-  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false};
+  if(v==="v1"){clearTimeout(ripT);}
+  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle"};
   if(v==="v2")S.v2={step:0};
 }
 
@@ -1099,6 +1123,19 @@ const V1={
     const s=S.v1, m=mkt(c);
     /* Predict and Collect copy are finalized; Play keeps its placeholder body
        text and secondary CTA until its own content pass. */
+    /* Collect rip sequence: idle -> ripping (3s synchronized border pulse)
+       -> revealed (winning card flips to the Pereira rookie). */
+    const phase=s.colPhase||"idle", WIN=1;
+    const ripCards=[0,1,2].map(i=>{
+      const won=phase==="revealed"&&i===WIN;
+      return `<div class="ripcard" data-win="${won?'true':'false'}" data-flipped="${won?'true':'false'}">
+        <div class="rc-inner">
+          <div class="rc-face rc-front hatch"><span class="lbl">Card ${i+1}</span></div>
+          <div class="rc-face rc-back hatch"><span class="lbl">Alex Pereira Rookie</span></div>
+        </div></div>`;}).join("");
+    const colBody=`<p class="txt">Land the Pereira hit to win the leg.</p>
+      <div class="ripcards mt16" data-phase="${phase}">${ripCards}</div>
+      ${phase==="revealed"?`<div class="successmsg"><span class="ok">${IC.check}</span>You landed the Pereira hit!</div>`:""}`;
     const body={
       PRE:`<div class="pcard mt16">
         <div class="pc-info">
@@ -1108,25 +1145,28 @@ const V1={
         </div>
         <div class="pc-img hatch"><span class="lbl">Fight card · Pereira vs. Hill</span></div>
       </div>`,
-      COL:`<p class="txt">Land the Pereira hit to win the leg.</p>
-        <div class="row gap10 mt16">${[0,1,2].map(i=>`<div class="hatch r-card" style="flex:1"><span class="lbl">Card ${i+1}</span></div>`).join("")}</div>`,
+      COL:colBody,
       PLY:`<p class="txt">Take the run to the table. Clear it to bank the whole combo.</p>
         <div class="hatch r-media mt16"><span class="lbl">${m.title} · seat open</span></div>`
     };
     /* Legs opt into a secondary CTA; omitting `watch` leaves one filled button. */
-    const cta={
+    let cta={
       PRE:{watch:"Watch Fight", play:"Play Next Leg →"},
-      COL:{play:"Rip Pack"},
+      COL:{play:"Rip Pack", action:"rip"},
       PLY:{watch:"Watch Table", play:"Play Next Leg →"}
     }[c];
-    return `<div class="main anim">
+    if(c==="COL"){
+      if(phase==="ripping") cta={play:"Ripping…", disabled:true};
+      else if(phase==="revealed") cta={play:"Play Next Leg →"};
+    }
+    return `<div class="main">
       ${this.progbar(c)}
       ${roomtag(c)}
       <h2 class="h-lg mt12">${m.title}</h2>
       ${body[c]}
       <div class="ctarow mt20">
         ${cta.watch?`<button class="btn ghost" data-a="watch" data-c="${c}">${cta.watch}</button>`:""}
-        <button class="btn" data-a="resolve" data-c="${c}">${cta.play}</button>
+        <button class="btn" data-a="${cta.action||'resolve'}" data-c="${c}"${cta.disabled?' disabled':''}>${cta.play}</button>
       </div>
     </div>`;
   },
@@ -1140,6 +1180,14 @@ const V1={
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
     else if(a==="watch"){toast("Watch view — not wired in this POC");}
+    else if(a==="rip"){
+      s.colPhase="ripping";
+      clearTimeout(ripT);
+      ripT=setTimeout(()=>{
+        if(S.v!=="v1"||S.v1.colPhase!=="ripping")return;
+        S.v1.colPhase="revealed"; paint(); toast("Pulled: Alex Pereira Rookie");
+      },3000);
+    }
     else if(a==="rmleg"){ if(s.legs.length>1){ if(s.swapping===ds.c)s.swapping=null; s.legs=s.legs.filter(x=>x!==ds.c); toast(ROOM[ds.c].name+" removed"); } }
     else if(a==="addleg"){ if(!s.legs.includes(ds.c)){ if(ds.mi!==undefined)s.mk[ds.c]=+ds.mi; s.legs=PLAY.order.filter(x=>s.legs.includes(x)||x===ds.c); toast(ROOM[ds.c].name+" added"); } }
     else if(a==="swapleg"){ s.swapping=(s.swapping===ds.c?null:ds.c); }
