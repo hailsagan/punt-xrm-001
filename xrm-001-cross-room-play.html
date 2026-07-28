@@ -93,7 +93,7 @@
 
 /* ---------- stage / device frame / viewport (ported from PRE-002) ---------- */
 .appshell{flex:1; min-height:0; width:100%; background:var(--punt-surface-page);
-  display:flex; flex-direction:column}
+  display:flex; flex-direction:column; position:relative}
 .stage{flex:1; min-height:0; overflow-y:auto; background:var(--punt-surface-page)}
 .stage[data-device="mobile"]{background:#17181b; display:flex; justify-content:center;
   align-items:flex-start; padding:24px 16px}
@@ -378,6 +378,44 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
   background:var(--punt-status-success); flex-shrink:0; animation:modPulse 1.8s var(--punt-ease) infinite}
 @keyframes modPulse{0%,100%{opacity:1}50%{opacity:.45}}
 
+/* ===== mini tracker — persistent post-bet summary, floats above the review bar ===== */
+.mini-tracker{position:absolute; z-index:15; display:none}
+.mini-tracker[data-show="true"]{display:block}
+.mini-tracker[data-device="desktop"]{right:20px; bottom:20px; width:290px}
+.mini-tracker[data-device="mobile"]{left:50%; bottom:12px; transform:translateX(-50%);
+  width:min(402px, calc(100% - 24px))}
+.mt-card{background:var(--punt-surface-default); border:1px solid var(--punt-border-subtle);
+  border-radius:var(--punt-radius-lg); box-shadow:var(--punt-shadow-2); overflow:hidden;
+  font-family:var(--punt-font-body); color:var(--punt-text-primary)}
+.mt-head{display:flex; align-items:center; gap:10px; width:100%; padding:12px 14px;
+  background:0 0; border:0; text-align:left; color:inherit; cursor:default}
+.mini-tracker[data-device="mobile"] .mt-head{cursor:pointer}
+.mt-dot{width:7px; height:7px; border-radius:50%; background:var(--punt-status-success);
+  flex:0 0 auto; animation:modPulse 1.8s var(--punt-ease) infinite}
+.mt-title{flex:1; min-width:0; font-size:var(--punt-font-size-sm); font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mt-frag{flex:0 0 auto; font-family:var(--punt-font-mono); font-size:11px;
+  color:var(--punt-text-secondary); font-variant-numeric:tabular-nums}
+.mt-chev{width:14px; height:14px; stroke:var(--punt-text-secondary); fill:none;
+  stroke-width:2; flex:0 0 auto; transition:transform .18s var(--punt-ease); display:none}
+.mini-tracker[data-device="mobile"] .mt-chev{display:block}
+.mini-tracker[data-open="true"] .mt-chev{transform:rotate(180deg)}
+.mt-body{padding:0 14px 14px}
+.mini-tracker[data-device="mobile"][data-open="false"] .mt-body{display:none}
+.mt-legs{display:flex; flex-direction:column; gap:7px; margin:2px 0 12px}
+.mt-leg{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--punt-text-secondary)}
+.mt-leg[data-done="true"]{color:var(--punt-text-primary)}
+.mt-leg .st{width:14px; height:14px; border-radius:50%; border:1px solid var(--punt-border-strong);
+  flex:0 0 auto; display:grid; place-items:center}
+.mt-leg[data-done="true"] .st{background:var(--punt-status-success); border-color:var(--punt-status-success)}
+.mt-leg .st svg{width:9px; height:9px; stroke:var(--punt-color-on-brand); fill:none; stroke-width:3}
+.mt-stat{display:flex; gap:6px; font-family:var(--punt-font-mono); font-size:11px;
+  color:var(--punt-text-secondary); margin-bottom:10px; font-variant-numeric:tabular-nums}
+.mt-cta{width:100%; background:var(--punt-color-brand); color:var(--punt-color-on-brand);
+  border:0; border-radius:var(--punt-radius-md); padding:9px; font-family:inherit;
+  font-size:12.5px; font-weight:600; cursor:pointer}
+.mt-cta:hover{opacity:.9}
+
 /* leg-card image placeholder: square, left-aligned, 8px inset from card edges */
 .legimg{flex:0 0 auto; align-self:stretch; margin:-6px 0 -6px -6px; border-radius:var(--r-sm)}
 
@@ -616,12 +654,13 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 </style>
 
 <div class="xrm" id="xrm" data-notes="off">
-  <div class="appshell">
+  <div class="appshell" id="appshell">
     <div class="stage" id="stage" data-device="desktop">
       <div class="frame" id="frame" data-device="desktop">
         <div class="viewport" id="app"></div>
       </div>
     </div>
+    <div class="mini-tracker" id="minitracker" data-show="false"></div>
   </div>
   <div class="toast" id="toast"></div>
   <div class="devtools" id="devtools" data-notes="off" data-open="false">
@@ -739,11 +778,11 @@ const ORDER=["v1","v2"];
 
 /* ---------- state ---------- */
 const S={v:"v1",notes:false,
-  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null},
+  v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
 function reset(v){
-  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null};
+  if(v==="v1")S.v1={stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false};
   if(v==="v2")S.v2={step:0};
 }
 
@@ -883,7 +922,7 @@ const V1={
                   </div>
                   <div class="hero-outwrap">
                     <div class="hero-legs">${heroLegs}</div>
-                    <span class="hero-cta">Play Combo</span>
+                    <span class="hero-cta">${st.placed?"View Combo":"Play Combo"}</span>
                   </div>
                 </div>
               </div>
@@ -977,6 +1016,7 @@ const V1={
         <div class="st">${done?tick("done"):IC_arrow()}</div></button>`;
     }).join("");
     const rail=`<div class="rail">
+      <button class="btn ghost sm" data-a="gohome" style="margin-bottom:14px">← Home</button>
       <div class="row between"><span class="rtag solid">${IC.cross}XRM SLIP</span>
         <span class="badge live">LIVE</span></div>
       <h3 class="h-md mt12">The Pereira Run</h3>
@@ -1015,9 +1055,10 @@ const V1={
   },
   on(a,ds){
     const s=S.v1;
-    if(a==="enter"){s.stage="build";}
+    if(a==="enter"){s.stage=s.placed?"active":"build";}
     else if(a==="stake"){s.stake=Math.max(5,s.stake+ +ds.d);}
-    else if(a==="place"){s.placed=true;s.stage="active";}
+    else if(a==="place"){s.placed=true;s.stage="landing";}
+    else if(a==="gohome"){s.stage="landing";s.active=null;}
     else if(a==="leg"){s.active=ds.c;}
     else if(a==="back"){s.active=null;}
     else if(a==="resolve"){s.done[ds.c]=true;s.active=null;toast(ROOM[ds.c].name+" leg resolved ✓");}
@@ -1139,6 +1180,37 @@ function paint(){
   $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
   syncLegImgs();
   bindScrollHost();
+  renderMiniTracker();
+}
+/* Mini tracker — persistent post-bet summary shown on the V1 landing
+   screen, floating above the review bar. Desktop: a small always-open
+   card, bottom-right. Mobile: a full-width bar above the bar, with its
+   own minimize/expand state so it doesn't compete with the framed phone. */
+let DEVICE="desktop";
+function renderMiniTracker(){
+  const el=$("#minitracker"); if(!el) return;
+  const s=S.v1;
+  const show = S.v==="v1" && s.stage==="landing" && s.placed && s.legs.some(c=>!s.done[c]);
+  if(!show){ el.setAttribute("data-show","false"); el.innerHTML=""; return; }
+  el.setAttribute("data-show","true");
+  el.setAttribute("data-device",DEVICE);
+  el.setAttribute("data-open", s.trackerOpen?"true":"false");
+  const doneCount=s.legs.filter(c=>s.done[c]).length;
+  const legsHtml=s.legs.map(c=>`<div class="mt-leg" data-done="${s.done[c]?'true':'false'}">
+      <span class="st">${s.done[c]?IC.check:''}</span><span>${ROOM[c].name}</span></div>`).join("");
+  el.innerHTML=`<div class="mt-card">
+    <button class="mt-head" data-a="mttoggle">
+      <span class="mt-dot"></span>
+      <span class="mt-title">The Pereira Run</span>
+      <span class="mt-frag">${doneCount}/${s.legs.length}</span>
+      <svg class="mt-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div class="mt-body">
+      <div class="mt-legs">${legsHtml}</div>
+      <div class="mt-stat"><span>$${s.stake} staked</span><span>·</span><span>$${toWin(s.stake,s.legs)} to win</span></div>
+      <button class="mt-cta" data-a="enter">View combo →</button>
+    </div>
+  </div>`;
 }
 function syncLegImgs(){
   requestAnimationFrame(()=>{
@@ -1174,10 +1246,13 @@ function updateStakeUI(){
 }
 
 /* ---------- events ---------- */
-app.addEventListener("click",e=>{
+/* Bound on #xrm (not just #app) so the mini tracker — which floats
+   outside the scrolling viewport — shares the same data-a dispatch. */
+xrm.addEventListener("click",e=>{
   const t=e.target.closest("[data-a]");if(!t)return;
   const a=t.dataset.a;
   if(a==="restart"){reset(S.v);paint();return;}
+  if(a==="mttoggle"){S.v1.trackerOpen=!S.v1.trackerOpen; renderMiniTracker(); return;}
   V[S.v].on&&V[S.v].on(a,t.dataset);
   if(a==="stake"&&S.v==="v1"&&S.v1.stage==="build"){ updateStakeUI(); return; }
   paint();
@@ -1207,11 +1282,11 @@ $("#skinswitch").addEventListener("click",e=>{const b=e.target.closest("button")
 });
 // Device — desktop renders full-bleed, mobile renders inside a phone frame
 $("#devswitch").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
-  const d=b.dataset.device;
+  const d=b.dataset.device; DEVICE=d;
   $("#stage").setAttribute("data-device",d);
   $("#frame").setAttribute("data-device",d);
   $("#devswitch").querySelectorAll("button").forEach(x=>x.setAttribute("data-on",x===b?"true":"false"));
-  syncLegImgs(); bindScrollHost();
+  syncLegImgs(); bindScrollHost(); renderMiniTracker();
 });
 // collapsed sheet toggle (small windows)
 $("#rbtoggle").addEventListener("click",()=>{const d=$("#devtools");
