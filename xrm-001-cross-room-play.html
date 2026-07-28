@@ -1097,8 +1097,8 @@ const V1={
   },
   roomPanel(c){
     const s=S.v1, m=mkt(c);
-    /* Predict's copy is finalized; Collect/Play keep their existing body text
-       until their own content pass. Secondary CTA label is per-room. */
+    /* Predict and Collect copy are finalized; Play keeps its placeholder body
+       text and secondary CTA until its own content pass. */
     const body={
       PRE:`<div class="pcard mt16">
         <div class="pc-info">
@@ -1108,20 +1108,25 @@ const V1={
         </div>
         <div class="pc-img hatch"><span class="lbl">Fight card · Pereira vs. Hill</span></div>
       </div>`,
-      COL:`<p class="txt">Rip your pack. A hit boosts the same ticket.</p>
+      COL:`<p class="txt">Land the Pereira hit to win the leg.</p>
         <div class="row gap10 mt16">${[0,1,2].map(i=>`<div class="hatch r-card" style="flex:1"><span class="lbl">Card ${i+1}</span></div>`).join("")}</div>`,
       PLY:`<p class="txt">Take the run to the table. Clear it to bank the whole combo.</p>
         <div class="hatch r-media mt16"><span class="lbl">${m.title} · seat open</span></div>`
     };
-    const watch={PRE:"Watch Fight",COL:"Watch Drop",PLY:"Watch Table"};
+    /* Legs opt into a secondary CTA; omitting `watch` leaves one filled button. */
+    const cta={
+      PRE:{watch:"Watch Fight", play:"Play Next Leg →"},
+      COL:{play:"Rip Pack"},
+      PLY:{watch:"Watch Table", play:"Play Next Leg →"}
+    }[c];
     return `<div class="main anim">
       ${this.progbar(c)}
       ${roomtag(c)}
       <h2 class="h-lg mt12">${m.title}</h2>
       ${body[c]}
       <div class="ctarow mt20">
-        <button class="btn ghost" data-a="watch" data-c="${c}">${watch[c]}</button>
-        <button class="btn" data-a="resolve" data-c="${c}">Play Next Leg →</button>
+        ${cta.watch?`<button class="btn ghost" data-a="watch" data-c="${c}">${cta.watch}</button>`:""}
+        <button class="btn" data-a="resolve" data-c="${c}">${cta.play}</button>
       </div>
     </div>`;
   },
