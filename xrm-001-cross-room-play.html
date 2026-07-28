@@ -167,12 +167,10 @@
   .rail{display:contents}
   .rail-mid{display:contents}
   .main{display:contents}
-  /* Scrolling order: title, tracker bar, this leg's detail, then the
-     carousel+dots — each its own 24px-gapped flex item off .layout, except
-     tracker-to-title which sits tighter (12px) than the rest of the rhythm. */
-  .rail-title{order:-3}
-  div.progbar{order:-2; margin-bottom:0}
-  .detail-body{order:-1; margin-top:-12px}
+  /* Scrolling order: title, this leg's detail, then the carousel+dots —
+     each its own 24px-gapped flex item off .layout. */
+  .rail-title{order:-2}
+  .detail-body{order:-1}
   .legcarwrap{margin-top:0}
   /* left/right/bottom inset by the bezel: .railfoot's containing block is
      .frame's full padding box (its outer edges — .frame has no CSS border,
@@ -281,16 +279,6 @@
    railfoot bar instead (see the width<=40rem block above) */
 .railfoot-cta{display:none}
 
-/* leg progress — one segment per leg, spans the working column */
-.progbar{display:flex; gap:8px; padding:7px 0; margin-bottom:20px}
-.progseg{position:relative; flex:1; height:8px; border-radius:var(--punt-radius-pill);
-  background:var(--surface-2); transition:background .2s var(--punt-ease), box-shadow .2s var(--punt-ease)}
-.progseg[data-state="current"]{background:var(--line-strong); box-shadow:0 0 0 2px var(--ring)}
-.progseg[data-state="done"]{background:var(--accent)}
-.progcheck{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:20px; height:20px; border-radius:50%; background:var(--accent);
-  display:grid; place-items:center; box-shadow:0 0 0 3px var(--panel)}
-.progcheck svg{width:11px; height:11px; stroke:var(--on-fill); fill:none; stroke-width:3}
 
 /* ---------- primitives ---------- */
 .kicker{font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
@@ -1261,17 +1249,6 @@ const V1={
     return appbar(cur)+`<div class="scroll"><div class="layout">${rail}${this.roomPanel(cur)}</div></div>`
       +(all?successModal(s):"");
   },
-  /* Progress across the combo's legs — one segment per leg. Sits at the top
-     of the right column so it spans the full working area. */
-  progbar(cur){
-    const s=S.v1;
-    const met=c=>this.legMet(c);
-    return `<div class="progbar">${s.legs.map(c=>{
-      const st=met(c)?"done":(c===cur?"current":"idle");
-      return `<div class="progseg" data-state="${st}" title="${ROOM[c].name}">${
-        met(c)?`<span class="progcheck">${IC.check}</span>`:""}</div>`;
-    }).join("")}</div>`;
-  },
   roomPanel(c){
     const s=S.v1, m=mkt(c);
     /* Predict and Collect copy are finalized; Play keeps its placeholder body
@@ -1318,7 +1295,6 @@ const V1={
     const header=`<span class="detail-roomtag">${roomtag(c)}</span>`
       +(c==="PRE"?"":`\n        <h2 class="h-lg mt12">${m.title}</h2>`);
     return `<div class="main">
-      ${this.progbar(c)}
       <div class="detail-body">
         ${header}
         ${body[c]}
