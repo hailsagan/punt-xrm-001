@@ -167,13 +167,13 @@
   .rail{display:contents}
   .rail-mid{display:contents}
   .main{display:contents}
-  /* Scrolling order: title, this leg's detail, then the carousel+dots —
-     each its own 24px-gapped flex item off .layout, except title-to-detail
+  /* Scrolling order: title, the carousel+dots, then this leg's detail —
+     each its own 24px-gapped flex item off .layout, except title-to-carousel
      which is tightened to match the reduced top padding above the eyebrow. */
   .rail-title{order:-2}
   .rail-title .h-lg{font-size:19px}
-  .detail-body{order:-1; margin-top:-8px}
-  .legcarwrap{margin-top:0}
+  .legcarwrap{order:-1; margin-top:-8px}
+  .detail-body{margin-top:0}
   /* left/right/bottom inset by the bezel: .railfoot's containing block is
      .frame's full padding box (its outer edges — .frame has no CSS border,
      so padding-box == border-box here), not .viewport's edges, which sit
@@ -220,7 +220,11 @@
   .pcard{flex-direction:column; gap:14px}
   .pc-info{flex:0 0 auto}
   .pc-info .badge.live{margin-top:0}
-  .pc-img{min-height:150px; aspect-ratio:16/9}
+  /* Match desktop's ~2.6:1 media ratio instead of the taller default —
+     .pcard .handstage is what actually sizes the media here, since its
+     .pc-img child is stretched to fill it (height:100%). */
+  .pc-img{min-height:130px}
+  .pcard .handstage{min-height:130px}
 }
 
 /* Collect rip — synchronized border pulse, then the winner flips */
