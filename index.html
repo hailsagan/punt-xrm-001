@@ -768,21 +768,6 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
   transition:.25s; z-index:60; font-family:var(--mono); letter-spacing:.02em; white-space:nowrap}
 .toast.show{opacity:1; transform:translateX(-50%)}
 
-/* UX notes — tray anchored above the review bar */
-.dt-notes-tray{position:fixed; right:20px; bottom:104px; width:326px;
-  background:var(--surface); border:1px solid var(--line-2); border-radius:16px;
-  padding:16px; box-shadow:var(--shadow-lg); max-height:min(60vh,520px); overflow-y:auto;
-  opacity:0; transform:translateY(10px); pointer-events:none; z-index:1001;
-  transition:opacity .2s ease, transform .24s cubic-bezier(.2,.7,.2,1)}
-.devtools[data-notes="on"] .dt-notes-tray{opacity:1; transform:translateY(0); pointer-events:auto}
-.tray-title{font-family:var(--mono); font-size:11px; letter-spacing:.05em; font-weight:600; color:var(--ink)}
-.tray-pattern{font-family:var(--mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); margin-top:4px}
-.tray-sec{margin-top:12px; padding-top:12px; border-top:1px solid var(--line)}
-.tray-sec .tag{display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:5px}
-.tray-sec p{margin:0; font-size:12px; line-height:1.46; color:var(--ink-2)}
-@media (max-width:760px){
-  .dt-notes-tray{left:12px; right:12px; width:auto; bottom:132px; max-height:44vh}
-}
 
 /* ---------- review bar (ported verbatim from PRE-002 harness) ---------- */
 .devtools{display:flex; flex-wrap:wrap; flex-shrink:0; align-items:center; gap:14px 20px;
@@ -809,6 +794,8 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .rb-action:hover{color:#fff; border-color:#3a3d44}
 .rb-action[data-on="true"]{color:#fff; background:#2f3238}
 .rb-action:focus-visible{outline:2px solid #5b8cff; outline-offset:1px}
+.rb-action:disabled{cursor:default; opacity:.45}
+.rb-action:disabled:hover{color:#b7bac1; border-color:#2c2e33}
 .rb-action svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2}
 .rb-right{margin-left:auto; display:flex; align-items:center; gap:14px}
 /* collapsed sheet on small windows — matches the reference harness */
@@ -857,7 +844,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
 .reduced *{animation:none !important}
 </style>
 
-<div class="xrm" id="xrm" data-notes="off">
+<div class="xrm" id="xrm">
   <div class="appshell" id="appshell">
     <div class="stage" id="stage" data-device="desktop">
       <div class="frame" id="frame" data-device="desktop">
@@ -867,7 +854,7 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
     <div class="mini-tracker" id="minitracker" data-show="false"></div>
   </div>
   <div class="toast" id="toast"></div>
-  <div class="devtools" id="devtools" data-notes="off" data-open="false">
+  <div class="devtools" id="devtools" data-open="false">
     <button class="rb-toggle" id="rbtoggle" aria-label="Show review controls" aria-expanded="false">
       <svg viewBox="0 0 24 24"><path d="M10 5H3M12 19H3M14 3v4M16 17v4M21 12h-9M21 19h-5M21 5h-7M8 10v4M8 12H3"/></svg>
     </button>
@@ -900,15 +887,14 @@ button:focus-visible,[tabindex]:focus-visible,.tap:focus-visible{outline:2px sol
       <div class="rb-right">
         <button class="rb-action" id="restart">
           <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          Reset learning
+          Reset
         </button>
-        <button class="rb-action" id="notesbtn">
-          <svg viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg>
-          UX notes
+        <button class="rb-action" id="indexbtn" disabled>
+          <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          Index
         </button>
       </div>
     </div>
-    <div class="dt-notes-tray" id="notesband"></div>
   </div>
 </div>
 
@@ -982,7 +968,7 @@ const META={
 const ORDER=["v1"];
 
 /* ---------- state ---------- */
-const S={v:"v1",notes:false,
+const S={v:"v1",
   v1:{stage:"landing",stake:ENTRY,active:null,done:{PRE:false,COL:false,PLY:false},placed:false,legs:["PRE","COL","PLY"],mk:{PRE:0,COL:0,PLY:0},swapping:null,trackerOpen:false,colPhase:"idle",plyPhase:"idle",prePhase:"awaiting"},
   v2:{step:0}, // 0 pre, 1 pre-hit, 2 col, 3 col-hit, 4 ply, 5 done
 };
@@ -1508,24 +1494,10 @@ let toastT;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");
   clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1700);}
 
-/* ---------- notes band ---------- */
-function renderNotes(){
-  const m=META[S.v];
-  $("#notesband").innerHTML=`<div class="tray-title">${m.code} · ${m.name}</div>
-    <div class="tray-pattern">${m.pattern}</div>
-    <div class="tray-sec"><span class="tag">The object</span><p>${m.note}</p></div>
-    <div class="tray-sec"><span class="tag">Why this concept</span><p>${m.move}</p></div>
-    <div class="tray-sec"><span class="tag">Considerations</span><p>${m.risk}</p></div>`;
-}
-
 /* ---------- paint ---------- */
 function paint(){
   app.innerHTML=V[S.v].view();
-  renderNotes();
   document.querySelectorAll("#varlist button").forEach(b=>b.setAttribute("data-on",b.dataset.v===S.v?"true":"false"));
-  $("#notesbtn").classList.toggle("on",S.notes);
-  xrm.setAttribute("data-notes",S.notes?"on":"off");
-  $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
   syncLegImgs();
   bindScrollHost();
   bindLegCarousel();
@@ -1666,13 +1638,6 @@ varlist.innerHTML=ORDER.map(v=>{const m=META[v];
   return `<button data-v="${v}" data-on="${v===S.v?'true':'false'}">${m.name}</button>`;}).join("");
 varlist.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   S.v=b.dataset.v;reset(S.v);paint();});
-$("#notesbtn").addEventListener("click",()=>{
-  S.notes=!S.notes;
-  renderNotes();
-  $("#notesbtn").setAttribute("data-on",S.notes?"true":"false");
-  xrm.setAttribute("data-notes",S.notes?"on":"off");
-  $("#devtools").setAttribute("data-notes",S.notes?"on":"off");
-});
 // Reset learning — restarts the current flow
 $("#restart").addEventListener("click",()=>{reset(S.v);paint();});
 // Fidelity — Mid-Fi is the source's light theme, Hi-Fi its dark brand theme
