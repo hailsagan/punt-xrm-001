@@ -1321,10 +1321,10 @@ const V1={
       PLY:plyBody
     };
     const cta=this.legCTA(c);
-    /* Predict's pcard already carries its own title/badge — the page header
-       above it would just repeat that, so Predict skips it uniquely. */
-    const header=c==="PRE"?"":`<span class="detail-roomtag">${roomtag(c)}</span>
-        <h2 class="h-lg mt12">${m.title}</h2>`;
+    /* Predict's pcard already carries its own title — the h2 above it would
+       just repeat that, so Predict keeps only the room label, no h2. */
+    const header=`<span class="detail-roomtag">${roomtag(c)}</span>`
+      +(c==="PRE"?"":`\n        <h2 class="h-lg mt12">${m.title}</h2>`);
     return `<div class="main">
       ${this.progbar(c)}
       <div class="detail-body">
